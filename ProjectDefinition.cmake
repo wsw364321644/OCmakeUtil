@@ -76,11 +76,13 @@ macro(AddSourceFolder)
 		foreach(LETTER ${AddSourceFolder_PUBLIC})
 			list(APPEND PublicIncludeFolders ${LETTER})
 			SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
+			list(APPEND PublicIncludeFiles ${EXCLUDED_FILES})
 		endforeach()
 
 		foreach(LETTER ${AddSourceFolder_INTERFACE})
 			list(APPEND InterfaceIncludeFolders ${LETTER})
 			SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
+			list(APPEND InterfaceIncludeFiles ${EXCLUDED_FILES})
 		endforeach()
 	else()
 		foreach(LETTER ${AddSourceFolder_UNPARSED_ARGUMENTS})
@@ -95,28 +97,34 @@ macro(NewTargetSource)
 	set(PrivateIncludeFolders "")
 	set(PublicIncludeFolders "")
 	set(InterfaceIncludeFolders "")
+	set(PublicIncludeFiles "")
+	set(InterfaceIncludeFiles "")
 endmacro(NewTargetSource)
 
-macro(AddTargetInclude  TARGET_NAME)
+macro(AddTargetInclude TARGET_NAME)
 	foreach(folderpath IN LISTS PublicIncludeFolders)
-		#file(RELATIVE_PATH relative  directory ${folderpath})
-		target_include_directories( ${TARGET_NAME}
+		# file(RELATIVE_PATH relative  directory ${folderpath})
+		target_include_directories(${TARGET_NAME}
 			PUBLIC $<BUILD_INTERFACE:${folderpath}>
 			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
 		)
 	endforeach()
+
 	foreach(folderpath IN LISTS PrivateIncludeFolders)
-		target_include_directories( ${TARGET_NAME}
+		target_include_directories(${TARGET_NAME}
 			PRIVATE $<BUILD_INTERFACE:${folderpath}>
 			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
 		)
 	endforeach()
+
 	foreach(folderpath IN LISTS InterfaceIncludeFolders)
-		target_include_directories( ${TARGET_NAME}
+		target_include_directories(${TARGET_NAME}
 			INTERFACE $<BUILD_INTERFACE:${folderpath}>
 			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
 		)
 	endforeach()
+
+	set_target_properties(${TARGET_NAME} PROPERTIES PUBLIC_HEADER "${PublicIncludeFiles}${InterfaceIncludeFiles}")
 endmacro(AddTargetInclude)
 
 MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
