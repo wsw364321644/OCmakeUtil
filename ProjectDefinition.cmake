@@ -97,6 +97,28 @@ macro(NewTargetSource)
 	set(InterfaceIncludeFolders "")
 endmacro(NewTargetSource)
 
+macro(AddTargetInclude  TARGET_NAME)
+	foreach(folderpath IN LISTS PublicIncludeFolders)
+		file(RELATIVE_PATH relative  directory ${folderpath})
+		target_include_directories( ${TARGET_NAME}
+			PUBLIC $<BUILD_INTERFACE:${folderpath}>
+			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
+		)
+	endforeach()
+	foreach(folderpath IN LISTS PrivateIncludeFolders)
+		target_include_directories( ${TARGET_NAME}
+			PRIVATE $<BUILD_INTERFACE:${folderpath}>
+			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
+		)
+	endforeach()
+	foreach(folderpath IN LISTS InterfaceIncludeFolders)
+		target_include_directories( ${TARGET_NAME}
+			INTERFACE $<BUILD_INTERFACE:${folderpath}>
+			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
+		)
+	endforeach()
+endmacro(AddTargetInclude)
+
 MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
 	SET(dlls "${ARGN}")
 
