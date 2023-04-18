@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.24)
+include(ExternalProject)
+project(project_zlib)
+
+ExternalProject_Add(zlib
+  GIT_REPOSITORY https://github.com/madler/zlib.git
+  GIT_TAG 04f42ceca40f73e2978b50e93806c2a18c1281fc # v1.2.13
+  CMAKE_ARGS
+  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+  CMAKE_CACHE_ARGS
+  -DZLIB_ENABLE_TESTS:BOOL=OFF
+  #INSTALL_DIR
+)
+#ExternalProject_Add_StepTargets(zlib install)
