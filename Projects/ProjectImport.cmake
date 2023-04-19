@@ -12,6 +12,12 @@ FUNCTION(ImportProject ProjectName)
     set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProjectName_Lower})
     find_package(${ProjectName})
 
+    set(CMAKE_GENERATOR_ARGV "-G \"${CMAKE_GENERATOR}\"")
+    #message(STATUS "CMAKE_GENERATOR_PLATFORM $<$<BOOL:CMAKE_GENERATOR_PLATFORM>:-A ${CMAKE_GENERATOR_PLATFORM}>")
+    if(CMAKE_GENERATOR_PLATFORM)
+        set(CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR_ARGV} -A ${CMAKE_GENERATOR_PLATFORM}")
+    endif()
+    #message(STATUS "CMAKE_GENERATOR_ARGV ${CMAKE_GENERATOR_ARGV}")
     if(NOT ${ProjectName}_FOUND)
         if(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
@@ -25,13 +31,16 @@ ENDFUNCTION(ImportProject)
 
 FUNCTION(ImportZLIB)
 
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    if(IMPORT_PROJECT_STARIC_CRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
     #set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
     #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
 
-
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt)
-    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"  -A ${CMAKE_GENERATOR_PLATFORM} .
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -49,7 +58,7 @@ FUNCTION(ImportCURL)
     endif()
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt)
-    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
