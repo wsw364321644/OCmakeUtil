@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 FUNCTION(ImportProject ProjectName)
-    set(options STARIC_CRT)
+    set(options STATIC_CRT )
     set(oneValueArgs)
     set(multiValueArgs)
 
@@ -31,7 +31,7 @@ ENDFUNCTION(ImportProject)
 
 FUNCTION(ImportZLIB)
 
-    if(IMPORT_PROJECT_STARIC_CRT)
+    if(IMPORT_PROJECT_STATIC_CRT)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
@@ -51,7 +51,7 @@ FUNCTION(ImportZLIB)
 ENDFUNCTION(ImportZLIB)
 
 FUNCTION(ImportCURL)
-    if(IMPORT_PROJECT_STARIC_CRT)
+    if(IMPORT_PROJECT_STATIC_CRT)
         set(CURL_STATIC_CRT ON)
     else()
         set(CURL_STATIC_CRT OFF)
