@@ -1,0 +1,56 @@
+cmake_minimum_required(VERSION 3.23)
+include(FetchContent)
+
+project(download_sqlite)
+option(SQLITE_STATIC "ENABLE STATIC BUILD." ${SQLITE_STATIC})
+
+set(DEFAULT_URL https://www.sqlite.org/2023/sqlite-amalgamation-3430200.zip)
+
+set(url ${SQLITE_AMALGAMATION_URL})
+# set(hash af02b88cc922e7506c6659737560c0756deee24e4e7741d4b315af341edd8b40)
+
+if(url STREQUAL  "")
+  set(url ${DEFAULT_URL})
+elseif(NOT url)
+  set(url ${DEFAULT_URL})
+endif()
+if(hash)
+    FetchContent_Declare(download_sqlite
+        URL ${url}
+        URL_HASH SHA3_256=${hash}
+        DOWNLOAD_NO_EXTRACT false
+        DOWNLOAD_EXTRACT_TIMESTAMP false
+    )
+else()
+    FetchContent_Declare(download_sqlite
+        URL ${url}
+        DOWNLOAD_NO_EXTRACT false
+        DOWNLOAD_EXTRACT_TIMESTAMP false
+    )
+endif()
+
+FetchContent_MakeAvailable(download_sqlite)
+FetchContent_GetProperties(download_sqlite
+    SOURCE_DIR download_sqlite_SOURCE_DIR
+)
+
+if(MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY ${CMAKE_MSVC_RUNTIME_LIBRARY})
+endif()
+
+set(TARGET_NAME sqlite)
+set(SourceFiles "${SourceFiles};${download_sqlite_SOURCE_DIR}/sqlite3.c")
+set(SourceFiles "${SourceFiles};${download_sqlite_SOURCE_DIR}/sqlite3.h")
+set(SourceFiles "${SourceFiles};${download_sqlite_SOURCE_DIR}/sqlite3ext.h")
+source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SourceFiles})
+
+if(SQLITE_STATIC)
+    add_library(${TARGET_NAME} STATIC ${SourceFiles})
+else()
+    add_library(${TARGET_NAME} SHARED ${SourceFiles})
+endif()
+
+target_include_directories(${TARGET_NAME}
+    PUBLIC $<BUILD_INTERFACE:${download_sqlite_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include/${TARGET_NAME}>
+)
