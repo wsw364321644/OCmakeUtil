@@ -12,20 +12,21 @@ FUNCTION(ImportProject ProjectName)
     set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProjectName_Lower})
     find_package(${ProjectName})
 
-    set(CMAKE_GENERATOR_ARGV "-G \"${CMAKE_GENERATOR}\"")
+    list(APPEND CMAKE_GENERATOR_ARGV "-G")
+    list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR}")
 
     # message(STATUS "CMAKE_GENERATOR_PLATFORM $<$<BOOL:CMAKE_GENERATOR_PLATFORM>:-A ${CMAKE_GENERATOR_PLATFORM}>")
     if(CMAKE_GENERATOR_PLATFORM)
-        set(CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR_ARGV} -A ${CMAKE_GENERATOR_PLATFORM}")
+        list(APPEND CMAKE_GENERATOR_ARGV "-A")
+        list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR_PLATFORM}")
     endif()
 
-    # message(STATUS "CMAKE_GENERATOR_ARGV ${CMAKE_GENERATOR_ARGV}")
     if(NOT ${ProjectName}_FOUND)
         if(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
         elseif(ProjectName STREQUAL "CURL")
             ImportCURL()
-        elseif(ProjectName STREQUAL "SQLITE3")
+        elseif(ProjectName STREQUAL "SQLite3")
             ImportSQLITE3()
         else()
             message(STATUS "no project to import")
@@ -42,7 +43,7 @@ FUNCTION(ImportZLIB)
 
     # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
     # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
-    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt)
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
@@ -60,7 +61,7 @@ FUNCTION(ImportCURL)
         set(CURL_STATIC_CRT OFF)
     endif()
 
-    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt)
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
@@ -88,7 +89,9 @@ FUNCTION(ImportSQLITE3)
         set(SQLITE_AMALGAMATION_URL ${IMPORT_PROJECT_URL})
     endif()
 
-    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt)
+    message(STATUS "CMAKE_COMMAND:" ${CMAKE_COMMAND})
+    message(STATUS "CMAKE_GENERATOR_ARGV:" ${CMAKE_GENERATOR_ARGV})
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
