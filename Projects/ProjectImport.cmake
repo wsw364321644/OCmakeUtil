@@ -89,12 +89,12 @@ FUNCTION(ImportSQLITE3)
         set(SQLITE_AMALGAMATION_URL ${IMPORT_PROJECT_URL})
     endif()
 
-    message(STATUS "CMAKE_COMMAND:" ${CMAKE_COMMAND})
-    message(STATUS "CMAKE_GENERATOR_ARGV:" ${CMAKE_GENERATOR_ARGV})
+    # message(STATUS "CMAKE_COMMAND:" ${CMAKE_COMMAND})
+    # message(STATUS "CMAKE_GENERATOR_ARGV:" ${CMAKE_GENERATOR_ARGV})
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
-    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
     list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
