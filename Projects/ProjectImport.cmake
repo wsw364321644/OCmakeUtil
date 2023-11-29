@@ -29,6 +29,8 @@ FUNCTION(ImportProject ProjectName)
             ImportCURL()
         elseif(ProjectName STREQUAL "SQLite3")
             ImportSQLITE3()
+        elseif(ProjectName STREQUAL "LIBUV")
+            ImportLIBUV()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -52,13 +54,12 @@ FUNCTION(ImportZLIB)
         message(SEND_ERROR "missing ZLIB tag") 
     endif()
 
-    message(STATUS "import ${ProjectName}")
     # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
     # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
-    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
     list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
@@ -83,7 +84,7 @@ FUNCTION(ImportCURL)
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
-    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
     list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
@@ -121,6 +122,33 @@ FUNCTION(ImportSQLITE3)
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
 ENDFUNCTION(ImportSQLITE3)
 
+FUNCTION(ImportLIBUV)
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
+
+    
+    if(IMPORT_PROJECT_TAG)
+        set(LIBUV_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(LIBUV_TAG "0c1fa696aa502eb749c2c4735005f41ba00a27b8") # v1.44.2
+        message(SEND_ERROR "missing LIBUV tag") 
+    endif()
+
+    # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+    # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    find_package(${ProjectName} REQUIRED)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE FORCE "")
+ENDFUNCTION(ImportLIBUV)
 # MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
 # SET(dlls "${ARGN}")
 #
