@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 FUNCTION(ImportProject ProjectName)
     set(options STATIC_CRT STATIC)
-    set(oneValueArgs URL)
+    set(oneValueArgs URL TAG)
     set(multiValueArgs)
 
     cmake_parse_arguments(IMPORT_PROJECT "${options}" "${oneValueArgs}"
@@ -20,7 +20,8 @@ FUNCTION(ImportProject ProjectName)
         list(APPEND CMAKE_GENERATOR_ARGV "-A")
         list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR_PLATFORM}")
     endif()
-
+    
+    
     if(NOT ${ProjectName}_FOUND)
         if(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
@@ -29,8 +30,10 @@ FUNCTION(ImportProject ProjectName)
         elseif(ProjectName STREQUAL "SQLite3")
             ImportSQLITE3()
         else()
-            message(STATUS "no project to import")
+            message(STATUS "no project ${ProjectName} to import")
         endif()
+    else()
+        message(STATUS "ImportProject Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}" )
     endif()
 ENDFUNCTION(ImportProject)
 
@@ -41,12 +44,21 @@ FUNCTION(ImportZLIB)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 
+    
+    if(IMPORT_PROJECT_TAG)
+        set(ZLIB_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(ZLIB_TAG "04f42ceca40f73e2978b50e93806c2a18c1281fc") # v1.2.13
+        message(SEND_ERROR "missing ZLIB tag") 
+    endif()
+
+    message(STATUS "import ${ProjectName}")
     # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
     # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
-    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
     list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
@@ -61,10 +73,17 @@ FUNCTION(ImportCURL)
         set(CURL_STATIC_CRT OFF)
     endif()
 
+    if(IMPORT_PROJECT_TAG)
+        set(CURL_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(CURL_TAG "b16d1fa8ee567b52c09a0f89940b07d8491b881d") # curl-8_0_1
+        message(SEND_ERROR "missing CURL tag") 
+    endif()
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
-    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
     list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)

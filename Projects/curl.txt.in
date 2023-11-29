@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.24)
 include(ExternalProject)
 project(project_zlib)
 
+set(CURL_STATIC_CRT @CURL_STATIC_CRT@)
+
 ExternalProject_Add(curl
   GIT_REPOSITORY https://github.com/curl/curl.git
-  GIT_TAG b16d1fa8ee567b52c09a0f89940b07d8491b881d # curl-8_0_1
+  GIT_TAG @CURL_TAG@
   CMAKE_ARGS
   -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
   CMAKE_CACHE_ARGS
