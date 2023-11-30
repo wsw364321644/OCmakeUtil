@@ -1,13 +1,26 @@
 cmake_minimum_required(VERSION 3.24)
-include(FetchContent)
+#include(FetchContent)
 project(project_libuv)
 
-FetchContent_Declare(
-  libuv
-  GIT_REPOSITORY https://github.com/libuv/libuv.git
-  GIT_TAG  @LIBUV_TAG@
-  GIT_SUBMODULES_RECURSE true
+#FetchContent_Declare(
+#  libuv
+#   GIT_REPOSITORY https://github.com/libuv/libuv.git
+#  GIT_TAG  @LIBUV_TAG@
+#  GIT_SUBMODULES_RECURSE true
 
-  # FIND_PACKAGE_ARGS NAMES libuv
+#   # FIND_PACKAGE_ARGS NAMES libuv
+# )
+# FetchContent_MakeAvailable(libuv)
+
+
+include(ExternalProject)
+
+ExternalProject_Add(libuv
+  GIT_REPOSITORY https://github.com/libuv/libuv.git
+  GIT_TAG @LIBUV_TAG@
+  CMAKE_ARGS
+  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+  CMAKE_CACHE_ARGS
+  -DCMAKE_PREFIX_PATH:STRING=${CMAKE_PREFIX_PATH}
+  -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=@CMAKE_MSVC_RUNTIME_LIBRARY@
 )
-FetchContent_MakeAvailable(libuv)
