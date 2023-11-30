@@ -10,7 +10,6 @@ FUNCTION(ImportProject ProjectName)
 
     string(TOLOWER ${ProjectName} ProjectName_Lower)
     set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProjectName_Lower})
-    find_package(${ProjectName})
 
     list(APPEND CMAKE_GENERATOR_ARGV "-G")
     list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR}")
@@ -20,8 +19,13 @@ FUNCTION(ImportProject ProjectName)
         list(APPEND CMAKE_GENERATOR_ARGV "-A")
         list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR_PLATFORM}")
     endif()
-    
-    
+
+    if(ProjectName STREQUAL "ZLIB" AND IMPORT_PROJECT_STATIC)
+        set(ZLIB_USE_STATIC_LIBS "ON")
+    endif()
+
+    find_package(${ProjectName})
+
     if(NOT ${ProjectName}_FOUND)
         if(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
@@ -35,7 +39,7 @@ FUNCTION(ImportProject ProjectName)
             message(STATUS "no project ${ProjectName} to import")
         endif()
     else()
-        message(STATUS "ImportProject Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}" )
+        message(STATUS "ImportProject Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}")
     endif()
 ENDFUNCTION(ImportProject)
 
@@ -46,12 +50,11 @@ FUNCTION(ImportZLIB)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 
-    
     if(IMPORT_PROJECT_TAG)
         set(ZLIB_TAG ${IMPORT_PROJECT_TAG})
     else()
         set(ZLIB_TAG "04f42ceca40f73e2978b50e93806c2a18c1281fc") # v1.2.13
-        message(SEND_ERROR "missing ZLIB tag") 
+        message(SEND_ERROR "missing ZLIB tag")
     endif()
 
     # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
@@ -78,7 +81,7 @@ FUNCTION(ImportCURL)
         set(CURL_TAG ${IMPORT_PROJECT_TAG})
     else()
         set(CURL_TAG "b16d1fa8ee567b52c09a0f89940b07d8491b881d") # curl-8_0_1
-        message(SEND_ERROR "missing CURL tag") 
+        message(SEND_ERROR "missing CURL tag")
     endif()
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
@@ -129,12 +132,11 @@ FUNCTION(ImportLIBUV)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 
-    
     if(IMPORT_PROJECT_TAG)
         set(LIBUV_TAG ${IMPORT_PROJECT_TAG})
     else()
         set(LIBUV_TAG "0c1fa696aa502eb749c2c4735005f41ba00a27b8") # v1.44.2
-        message(SEND_ERROR "missing LIBUV tag") 
+        message(SEND_ERROR "missing LIBUV tag")
     endif()
 
     # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
@@ -149,6 +151,7 @@ FUNCTION(ImportLIBUV)
     find_package(${ProjectName} REQUIRED)
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE FORCE "")
 ENDFUNCTION(ImportLIBUV)
+
 # MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
 # SET(dlls "${ARGN}")
 #
