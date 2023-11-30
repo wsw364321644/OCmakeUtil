@@ -29,7 +29,7 @@ FUNCTION(ImportProject ProjectName)
     endif()
 
     find_package(${ProjectName})
-    message(STATUS "CURL_FOUND:${CURL_FOUND}")
+
     if(NOT ${ProjectName}_FOUND)
         if(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
