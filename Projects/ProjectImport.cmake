@@ -8,8 +8,22 @@ FUNCTION(ImportProject ProjectName)
     cmake_parse_arguments(IMPORT_PROJECT "${options}" "${oneValueArgs}"
         "${multiValueArgs}" ${ARGN})
 
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_STATIC_CRT")
+    endif()
+
+    if(IMPORT_PROJECT_STATIC)
+        set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_STATIC")
+    endif()
+
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_64")
+    else()
+        set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_32")
+    endif()
+
     string(TOLOWER ${ProjectName} ProjectName_Lower)
-    set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
 
     list(APPEND CMAKE_GENERATOR_ARGV "-G")
     list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR}")
