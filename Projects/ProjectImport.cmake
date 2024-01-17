@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 FUNCTION(ImportProject ProjectName)
-    set(options STATIC_CRT STATIC)
+    set(options STATIC_CRT STATIC SSH)
     set(oneValueArgs URL TAG)
     set(multiValueArgs)
 
@@ -75,6 +75,12 @@ FUNCTION(ImportZLIB)
         message(SEND_ERROR "missing ZLIB tag")
     endif()
 
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:madler/zlib.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/madler/zlib.git")
+    endif()
+
     # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
     # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
@@ -108,6 +114,11 @@ FUNCTION(ImportCURL)
         message(SEND_ERROR "missing CURL tag")
     endif()
 
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:curl/curl.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/curl/curl.git")
+    endif()
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -161,6 +172,12 @@ FUNCTION(ImportLIBUV)
     else()
         set(LIBUV_TAG "0c1fa696aa502eb749c2c4735005f41ba00a27b8") # v1.44.2
         message(SEND_ERROR "missing LIBUV tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:libuv/libuv.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/libuv/libuv.git")
     endif()
 
     # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")

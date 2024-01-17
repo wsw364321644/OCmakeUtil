@@ -4,7 +4,7 @@ project(project_libuv)
 
 #FetchContent_Declare(
 #  libuv
-#   GIT_REPOSITORY https://github.com/libuv/libuv.git
+#   GIT_REPOSITORY @GIT_REPOSITORY@
 #  GIT_TAG  @LIBUV_TAG@
 #  GIT_SUBMODULES_RECURSE true
 
@@ -16,7 +16,7 @@ project(project_libuv)
 include(ExternalProject)
 
 ExternalProject_Add(libuv
-  GIT_REPOSITORY https://github.com/libuv/libuv.git
+  GIT_REPOSITORY @GIT_REPOSITORY@
   GIT_TAG @LIBUV_TAG@
   CMAKE_ARGS
   -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>

@@ -3,7 +3,7 @@ include(ExternalProject)
 project(project_zlib)
 
 ExternalProject_Add(zlib
-  GIT_REPOSITORY https://github.com/madler/zlib.git
+  GIT_REPOSITORY @GIT_REPOSITORY@
   GIT_TAG @ZLIB_TAG@
   CMAKE_ARGS
   -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
