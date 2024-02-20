@@ -14,9 +14,9 @@ if(PKG_CONFIG_FOUND)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(_lib_suffix 64)
+  set(_lib_suffix .X64)
 else()
-  set(_lib_suffix 32)
+  set(_lib_suffix .X86)
 endif()
 
 find_path(
