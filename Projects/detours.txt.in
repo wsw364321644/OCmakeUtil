@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.24)
+include(ExternalProject)
+project(project_detours)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(DETOURS_TARGET x64)
+else()
+  set(DETOURS_TARGET x86)
+endif()
+
+if(MSVC)
+  ExternalProject_Add(detours
+    GIT_REPOSITORY @GIT_REPOSITORY@
+    GIT_TAG @DETOURS_TAG@
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ${CMAKE_MAKE_PROGRAM} <SOURCE_DIR>/vc/Detours.sln /property:Configuration=ReleaseMD /property:Platform=${DETOURS_TARGET}
+    INSTALL_COMMAND ""
+  )
+elseif(NOT MAKE_EXE STREQUAL MAKE_EXE-NOTFOUND)
+  ExternalProject_Add(detours
+    GIT_REPOSITORY @GIT_REPOSITORY@
+    GIT_TAG @DETOURS_TAG@
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ${MAKE_EXE}
+    BUILD_IN_SOURCE TRUE
+    INSTALL_COMMAND ""
+  )
+endif()

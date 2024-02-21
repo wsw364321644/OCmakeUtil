@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/Modules/FindDetours.cmake)
+
 FUNCTION(ImportProject ProjectName)
     set(options STATIC_CRT STATIC SSH)
     set(oneValueArgs URL TAG)
@@ -53,6 +55,8 @@ FUNCTION(ImportProject ProjectName)
             ImportSQLITE3()
         elseif(ProjectName STREQUAL "LIBUV")
             ImportLIBUV()
+        elseif(ProjectName STREQUAL "Detours")
+            ImportDETOURS()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -91,7 +95,7 @@ FUNCTION(ImportZLIB)
 
     list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     find_package(${ProjectName} REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE FORCE "")
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
 ENDFUNCTION(ImportZLIB)
 
 FUNCTION(ImportCURL)
@@ -119,6 +123,7 @@ FUNCTION(ImportCURL)
     else()
         set(GIT_REPOSITORY "https://github.com/curl/curl.git")
     endif()
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -190,8 +195,33 @@ FUNCTION(ImportLIBUV)
 
     list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     find_package(${ProjectName} REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE FORCE "")
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
 ENDFUNCTION(ImportLIBUV)
+
+FUNCTION(ImportDETOURS)
+    if(IMPORT_PROJECT_TAG)
+        set(DETOURS_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(DETOURS_TAG "4b8c659f549b0ab21cf649377c7a84eb708f5e68")
+        message(SEND_ERROR "missing DETOURS tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:microsoft/Detours.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/microsoft/Detours.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower})
+    find_package(${ProjectName} REQUIRED)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+ENDFUNCTION(ImportDETOURS)
 
 # MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
 # SET(dlls "${ARGN}")
