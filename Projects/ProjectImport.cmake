@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/Modules/FindDetours.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../Modules/FindDetours.cmake)
 
 FUNCTION(ImportProject ProjectName)
     set(options STATIC_CRT STATIC SSH)
