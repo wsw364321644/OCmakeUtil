@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/Modules/FindDetours.cmake)
+
 
 FUNCTION(ImportProject ProjectName)
     set(options STATIC_CRT STATIC SSH)
@@ -56,6 +56,8 @@ FUNCTION(ImportProject ProjectName)
         elseif(ProjectName STREQUAL "LIBUV")
             ImportLIBUV()
         elseif(ProjectName STREQUAL "Detours")
+            ImportDETOURS()
+        elseif(ProjectName STREQUAL "SDL2")
             ImportDETOURS()
         else()
             message(STATUS "no project ${ProjectName} to import")
@@ -212,6 +214,43 @@ FUNCTION(ImportDETOURS)
         set(GIT_REPOSITORY "https://github.com/microsoft/Detours.git")
     endif()
 
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower})
+    find_package(${ProjectName} REQUIRED)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+ENDFUNCTION(ImportDETOURS)
+
+
+FUNCTION(ImportSDL2)
+    if(IMPORT_PROJECT_TAG)
+        set(SDL2_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(SDL2_TAG "f461d91cd265d7b9a44b4d472b1df0c0ad2855a0")
+        message(SEND_ERROR "missing SDL2 tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:libsdl-org/SDL.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git")
+    endif()
+
+    if(IMPORT_PROJECT_STATIC)
+        set(SDL_SHARED FALSE)
+    else()
+        set(SDL_SHARED TRUE)
+    endif()
+
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
