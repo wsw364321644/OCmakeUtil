@@ -286,9 +286,9 @@ FUNCTION(ImportMbedTLS)
     endif()
 
     if(IMPORT_PROJECT_STATIC_CRT)
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        set(MSVC_STATIC_RUNTIME ON)
     else()
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+        set(MSVC_STATIC_RUNTIME OFF)
     endif()
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
