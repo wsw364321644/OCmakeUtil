@@ -46,7 +46,7 @@ FUNCTION(Importinih)
         ${inih_SOURCE_DIR}/ini.h
         ${inih_SOURCE_DIR}/ini.c
     )
-    target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
+    target_include_directories(${TARGET_NAME} PUBLIC ${inih_SOURCE_DIR})
     target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
     target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
@@ -60,7 +60,7 @@ FUNCTION(Importinih)
         ${inih_SOURCE_DIR}/ini.h
         ${inih_SOURCE_DIR}/ini.c
     )
-    target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
+    target_include_directories(${TARGET_NAME} PUBLIC ${inih_SOURCE_DIR})
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
 
@@ -74,7 +74,7 @@ FUNCTION(Importinih)
         ${inih_SOURCE_DIR}/cpp/INIReader.cpp
         ${inih_SOURCE_DIR}/cpp/INIReader.h
     )
-    target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/cpp)
+    target_include_directories(${TARGET_NAME} PUBLIC ${inih_SOURCE_DIR}/cpp)
     target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
     target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
 
@@ -88,7 +88,7 @@ FUNCTION(Importinih)
         ${inih_SOURCE_DIR}/cpp/INIReader.cpp
         ${inih_SOURCE_DIR}/cpp/INIReader.h
     )
-    target_include_directories(${TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/cpp)
+    target_include_directories(${TARGET_NAME} PUBLIC ${inih_SOURCE_DIR}/cpp)
 ENDFUNCTION(Importinih)
 
 FUNCTION(Importimgui)
