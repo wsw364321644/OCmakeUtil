@@ -15,7 +15,6 @@ FUNCTION(ImportTarget TargetName)
     else()
         message(STATUS "no target ${TargetName} to import")
     endif()
-
 ENDFUNCTION(ImportTarget)
 
 FUNCTION(Importinih)
@@ -124,17 +123,88 @@ FUNCTION(Importimgui)
         ${imgui_SOURCE_DIR}/imgui_tables.cpp
         ${imgui_SOURCE_DIR}/imgui_demo.cpp
     )
+
+    find_package(OpenGL)
+    find_package(GLUT)
+    find_package(GLFW)
+
+    if(OPENGL_FOUND)
+        list(APPEND SourceFiles
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.h
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.h
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+        )
+
+        if(GLUT_FOUND)
+            list(APPEND SourceFiles
+                ${imgui_SOURCE_DIR}/backends/imgui_impl_glut.h
+                ${imgui_SOURCE_DIR}/backends/imgui_impl_glut.cpp
+            )
+        endif()
+
+        if(GLFW_FOUND)
+            list(APPEND SourceFiles
+                ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.h
+                ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+            )
+        endif()
+    endif()
+
+    list(APPEND SourceFiles
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.h
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.h
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_glut.h
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_glut.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.h
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    )
+
+    find_package(SDL2)
+
+    if(SDL2_FOUND)
+        list(APPEND SourceFiles
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.h
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+        )
+    endif()
+
     if(WIN32)
         list(APPEND SourceFiles
             ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.h
             ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx9.h
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx9.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx10.h
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx10.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.h
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.h
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
         )
     endif()
 
     set(TARGET_NAME imgui_a)
     add_library(${TARGET_NAME} STATIC ${SourceFiles})
-    TARGET_INCLUDE_DIRECTORIES(${TARGET_NAME} PUBLIC 
-    ${imgui_SOURCE_DIR}/backends
-    ${imgui_SOURCE_DIR}
+    TARGET_INCLUDE_DIRECTORIES(${TARGET_NAME} PUBLIC
+        ${imgui_SOURCE_DIR}/backends
+        ${imgui_SOURCE_DIR}
     )
+
+    if(SDL2_FOUND)
+        target_link_libraries(${TARGET_NAME} PRIVATE SDL2::SDL2-static)
+    endif()
+
+    if(OPENGL_FOUND)
+        target_link_libraries(${TARGET_NAME} PRIVATE OpenGL::GL)
+        if(GLUT_FOUND)
+            target_link_libraries(${TARGET_NAME} PRIVATE GLUT::GLUT)
+        endif()
+
+        if(GLFW_FOUND)
+            target_link_libraries(${TARGET_NAME} PRIVATE GLFW::GLFW)
+        endif()
+    endif()
 ENDFUNCTION(Importimgui)
