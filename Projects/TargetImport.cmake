@@ -151,17 +151,6 @@ FUNCTION(Importimgui)
         endif()
     endif()
 
-    list(APPEND SourceFiles
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.h
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.h
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_glut.h
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_glut.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.h
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    )
-
     find_package(SDL2)
 
     if(SDL2_FOUND)
@@ -199,6 +188,7 @@ FUNCTION(Importimgui)
 
     if(OPENGL_FOUND)
         target_link_libraries(${TARGET_NAME} PRIVATE OpenGL::GL)
+
         if(GLUT_FOUND)
             target_link_libraries(${TARGET_NAME} PRIVATE GLUT::GLUT)
         endif()
