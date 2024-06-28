@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.24)
 
-
+FUNCTION(AddPathAndFind ProjectName Path)
+    if(IMPORT_PROJECT_FIND)
+        list(APPEND CMAKE_PREFIX_PATH ${Path})
+        find_package(${ProjectName} REQUIRED)
+        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+    endif()
+ENDFUNCTION(AddPathAndFind)
 
 FUNCTION(ImportProject ProjectName)
-    set(options STATIC_CRT STATIC SSH)
-    set(oneValueArgs URL TAG)
+    set(options STATIC_CRT STATIC SSH FIND)
+    set(oneValueArgs URL TAG BIT)
     set(multiValueArgs)
 
     cmake_parse_arguments(IMPORT_PROJECT "${options}" "${oneValueArgs}"
@@ -18,7 +24,11 @@ FUNCTION(ImportProject ProjectName)
         set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_STATIC")
     endif()
 
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    if(NOT IMPORT_PROJECT_BIT)
+        MATH(EXPR IMPORT_PROJECT_BIT "${CMAKE_SIZEOF_VOID_P}*8")
+    endif()
+
+    if(IMPORT_PROJECT_BIT EQUAL 64)
         set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_64")
     else()
         set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_32")
@@ -97,9 +107,7 @@ FUNCTION(ImportZLIB)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    find_package(${ProjectName} REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportZLIB)
 
 FUNCTION(ImportCURL)
@@ -134,9 +142,7 @@ FUNCTION(ImportCURL)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    find_package(${ProjectName} MODULE REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportCURL)
 
 FUNCTION(ImportSQLITE3)
@@ -164,9 +170,7 @@ FUNCTION(ImportSQLITE3)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    find_package(${ProjectName} REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportSQLITE3)
 
 FUNCTION(ImportLIBUV)
@@ -197,9 +201,7 @@ FUNCTION(ImportLIBUV)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    find_package(${ProjectName} REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportLIBUV)
 
 FUNCTION(ImportDETOURS)
@@ -222,11 +224,8 @@ FUNCTION(ImportDETOURS)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower})
-    find_package(${ProjectName} REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower})
 ENDFUNCTION(ImportDETOURS)
-
 
 FUNCTION(ImportSDL2)
     if(IMPORT_PROJECT_TAG)
@@ -253,17 +252,15 @@ FUNCTION(ImportSDL2)
     else()
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    find_package(${ProjectName} REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportSDL2)
-
 
 FUNCTION(ImportMbedTLS)
     if(IMPORT_PROJECT_TAG)
@@ -290,15 +287,14 @@ FUNCTION(ImportMbedTLS)
     else()
         set(MSVC_STATIC_RUNTIME OFF)
     endif()
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    list(APPEND CMAKE_PREFIX_PATH ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    find_package(${ProjectName} REQUIRED)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportMbedTLS)
 
 # MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
