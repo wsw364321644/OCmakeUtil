@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.24)
 include(ExternalProject)
 project(project_detours)
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(@IMPORT_PROJECT_BIT@ EQUAL 64)
   set(DETOURS_TARGET x64)
 else()
   set(DETOURS_TARGET x86)
