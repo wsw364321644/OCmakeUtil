@@ -189,7 +189,7 @@ FUNCTION(Importimgui)
 
     set(TARGET_NAME imgui_a)
     add_library(${TARGET_NAME} STATIC ${SourceFiles})
-    target_compile_definitions(${TARGET_NAME} PRIVATE -DImTextureID=ImU64)
+    target_compile_definitions(${TARGET_NAME} PUBLIC -DImTextureID=ImU64)
     TARGET_INCLUDE_DIRECTORIES(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${imgui_SOURCE_DIR}/backends>
         $<BUILD_INTERFACE:${imgui_SOURCE_DIR}>
