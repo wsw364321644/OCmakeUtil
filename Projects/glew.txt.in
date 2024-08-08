@@ -1,0 +1,39 @@
+cmake_minimum_required(VERSION 3.24)
+include(FetchContent)
+project(download_glew)
+
+set(DEFAULT_URL https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.zip)
+
+set(url @IMPORT_PROJECT_URL@)
+# set(hash af02b88cc922e7506c6659737560c0756deee24e4e7741d4b315af341edd8b40)
+
+if(url STREQUAL  "")
+  set(url ${DEFAULT_URL})
+elseif(NOT url)
+  set(url ${DEFAULT_URL})
+endif()
+
+if(hash)
+    FetchContent_Declare(download_glew
+        URL ${url}
+        URL_HASH SHA3_256=${hash}
+        DOWNLOAD_NO_EXTRACT false
+        DOWNLOAD_EXTRACT_TIMESTAMP false
+    )
+else()
+    FetchContent_Declare(download_glew
+        URL ${url}
+        DOWNLOAD_NO_EXTRACT false
+        DOWNLOAD_EXTRACT_TIMESTAMP false
+    )
+endif()
+
+FetchContent_MakeAvailable(download_glew)
+FetchContent_GetProperties(download_glew
+    SOURCE_DIR download_glew_SOURCE_DIR
+)
+
+execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DCMAKE_MSVC_RUNTIME_LIBRARY=@CMAKE_MSVC_RUNTIME_LIBRARY@  . 
+    WORKING_DIRECTORY ${download_glew_SOURCE_DIR}/build/cmake)
+execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+    WORKING_DIRECTORY ${download_glew_SOURCE_DIR}/build/cmake)
