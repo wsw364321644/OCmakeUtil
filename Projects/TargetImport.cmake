@@ -12,6 +12,8 @@ FUNCTION(ImportTarget TargetName)
         Importinih()
     elseif(TargetName STREQUAL "imgui")
         Importimgui()
+    elseif(TargetName STREQUAL "mpack")
+        Importmpack()
     else()
         message(STATUS "no target ${TargetName} to import")
     endif()
@@ -37,13 +39,25 @@ FUNCTION(Importinih)
     FetchContent_MakeAvailable(inih)
     FetchContent_GetProperties(inih)
 
+    set(SourceFiles "")
+    set(HeaderFiles "")
+
+    list(APPEND SourceFiles
+        ${inih_SOURCE_DIR}/ini.c
+    )
+
+    list(APPEND HeaderFiles
+        ${inih_SOURCE_DIR}/ini.h
+    )
+
     set(TARGET_NAME inih)
     add_library(${TARGET_NAME} SHARED)
     target_sources(
         ${TARGET_NAME}
         PRIVATE
-        ${inih_SOURCE_DIR}/ini.h
-        ${inih_SOURCE_DIR}/ini.c
+        ${SourceFiles}
+        PUBLIC
+        ${HeaderFiles}
     )
     target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${inih_SOURCE_DIR}>
@@ -59,8 +73,9 @@ FUNCTION(Importinih)
     target_sources(
         ${TARGET_NAME}
         PRIVATE
-        ${inih_SOURCE_DIR}/ini.h
-        ${inih_SOURCE_DIR}/ini.c
+        ${SourceFiles}
+        PUBLIC
+        ${HeaderFiles}
     )
     target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${inih_SOURCE_DIR}>
@@ -69,15 +84,22 @@ FUNCTION(Importinih)
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
 
+    list(APPEND SourceFiles
+        ${inih_SOURCE_DIR}/cpp/INIReader.cpp
+    )
+
+    list(APPEND HeaderFiles
+        ${inih_SOURCE_DIR}/cpp/INIReader.h
+    )
+
     set(TARGET_NAME inihpp)
     add_library(${TARGET_NAME} SHARED)
     target_sources(
         ${TARGET_NAME}
         PRIVATE
-        ${inih_SOURCE_DIR}/ini.h
-        ${inih_SOURCE_DIR}/ini.c
-        ${inih_SOURCE_DIR}/cpp/INIReader.cpp
-        ${inih_SOURCE_DIR}/cpp/INIReader.h
+        ${SourceFiles}
+        PUBLIC
+        ${HeaderFiles}
     )
     target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${inih_SOURCE_DIR}/cpp>
@@ -91,10 +113,9 @@ FUNCTION(Importinih)
     target_sources(
         ${TARGET_NAME}
         PRIVATE
-        ${inih_SOURCE_DIR}/ini.h
-        ${inih_SOURCE_DIR}/ini.c
-        ${inih_SOURCE_DIR}/cpp/INIReader.cpp
-        ${inih_SOURCE_DIR}/cpp/INIReader.h
+        ${SourceFiles}
+        PUBLIC
+        ${HeaderFiles}
     )
     target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${inih_SOURCE_DIR}/cpp>
@@ -214,3 +235,78 @@ FUNCTION(Importimgui)
         endif()
     endif()
 ENDFUNCTION(Importimgui)
+
+FUNCTION(Importmpack)
+    if(NOT IMPORT_PROJECT_TAG)
+        set(IMPORT_PROJECT_TAG "79d3fcd3e04338b06e82d01a62f4aa98c7bad5f7") # v1.1.1
+        message(SEND_ERROR "missing PROJECT_TAG")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:ludocode/mpack.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/ludocode/mpack.git")
+    endif()
+
+    FetchContent_Declare(
+        mpack
+        GIT_REPOSITORY ${GIT_REPOSITORY}
+        GIT_TAG ${IMPORT_PROJECT_TAG}
+    )
+    FetchContent_MakeAvailable(mpack)
+    FetchContent_GetProperties(mpack)
+
+    set(SourceFiles "")
+    set(HeaderFiles "")
+
+    list(APPEND HeaderFiles
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-common.h
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-expect.h
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-node.h
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-platform.h
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-reader.h
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-writer.h
+        ${mpack_SOURCE_DIR}/src/mpack/mpack.h
+    )
+
+    list(APPEND SourceFiles
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-common.c
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-expect.c
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-node.c
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-platform.c
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-reader.c
+        ${mpack_SOURCE_DIR}/src/mpack/mpack-writer.c
+    )
+
+    set(TARGET_NAME mpack)
+    add_library(${TARGET_NAME} SHARED)
+    target_sources(
+        ${TARGET_NAME}
+        PRIVATE
+        ${SourceFiles}
+        PUBLIC
+        ${HeaderFiles}
+    )
+    target_include_directories(${TARGET_NAME} PUBLIC
+        $<BUILD_INTERFACE:${mpack_SOURCE_DIR}/src/mpack>
+        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
+    )
+    set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
+    set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
+
+    set(TARGET_NAME ${TARGET_NAME}_a)
+    add_library(${TARGET_NAME} STATIC)
+    target_sources(
+        ${TARGET_NAME}
+        PRIVATE
+        ${SourceFiles}
+        PUBLIC
+        ${HeaderFiles}
+    )
+    target_include_directories(${TARGET_NAME} PUBLIC
+        $<BUILD_INTERFACE:${mpack_SOURCE_DIR}/src/mpack>
+        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
+    )
+    set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
+    set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
+ENDFUNCTION(Importmpack)
