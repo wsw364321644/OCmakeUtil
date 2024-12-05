@@ -288,7 +288,7 @@ FUNCTION(Importmpack)
         ${HeaderFiles}
     )
     target_include_directories(${TARGET_NAME} PUBLIC
-        $<BUILD_INTERFACE:${mpack_SOURCE_DIR}/src/mpack>
+        $<BUILD_INTERFACE:${mpack_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:include/${TARGET_NAME}>
     )
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
@@ -304,7 +304,7 @@ FUNCTION(Importmpack)
         ${HeaderFiles}
     )
     target_include_directories(${TARGET_NAME} PUBLIC
-        $<BUILD_INTERFACE:${mpack_SOURCE_DIR}/src/mpack>
+        $<BUILD_INTERFACE:${mpack_SOURCE_DIR}/src>
         $<INSTALL_INTERFACE:include/${TARGET_NAME}>
     )
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
