@@ -75,6 +75,8 @@ FUNCTION(ImportProject ProjectName)
             ImportGLEW()
         elseif(ProjectName STREQUAL "rapidfuzz")
             ImportRAPIDFUZZ()
+        elseif(ProjectName STREQUAL "xxHash")
+            ImportxxHash()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -357,6 +359,43 @@ FUNCTION(ImportRAPIDFUZZ)
 
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportRAPIDFUZZ)
+
+
+FUNCTION(ImportxxHash)
+    if(IMPORT_PROJECT_TAG)
+        set(xxHash_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(xxHash_TAG "bbb27a5efb85b92a0486cf361a8635715a53f6ba")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:Cyan4973/xxHash.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/Cyan4973/xxHash.git")
+    endif()
+
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
+
+    if(IMPORT_PROJECT_STATIC)
+        set(BUILD_SHARED_LIBS FALSE)
+    else()
+        set(BUILD_SHARED_LIBS TRUE)
+    endif()
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+ENDFUNCTION(ImportxxHash)
+
+
+
 # MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
 # SET(dlls "${ARGN}")
 #
