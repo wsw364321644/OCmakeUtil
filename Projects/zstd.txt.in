@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.24)
+include(ExternalProject)
+project(project_zstd)
+
+ExternalProject_Add(zstd
+  GIT_REPOSITORY @GIT_REPOSITORY@
+  GIT_TAG @zstd_TAG@
+  SOURCE_SUBDIR "build/cmake"
+  CMAKE_ARGS
+  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+  CMAKE_CACHE_ARGS
+  -DCMAKE_PREFIX_PATH:STRING=${CMAKE_PREFIX_PATH}
+  -DZSTD_USE_STATIC_RUNTIME:BOOL=@ZSTD_USE_STATIC_RUNTIME@
+  -DZSTD_BUILD_PROGRAMS:BOOL=FALSE
+  -DZSTD_BUILD_TESTS:BOOL=FALSE
+)
+
+# ExternalProject_Add_StepTargets(xxhash install)

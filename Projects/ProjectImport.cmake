@@ -77,6 +77,8 @@ FUNCTION(ImportProject ProjectName)
             ImportRAPIDFUZZ()
         elseif(ProjectName STREQUAL "xxHash")
             ImportxxHash()
+        elseif(ProjectName STREQUAL "zstd")
+            ImportZSTD()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -393,6 +395,35 @@ FUNCTION(ImportxxHash)
 
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportxxHash)
+
+
+FUNCTION(ImportZSTD)
+    if(IMPORT_PROJECT_TAG)
+        set(zstd_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(zstd_TAG "f7a8bb1263448e5028aceeba606a08fe3809550f")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:facebook/zstd.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/facebook/zstd.git")
+    endif()
+
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(ZSTD_USE_STATIC_RUNTIME TRUE)
+    else()
+        set(ZSTD_USE_STATIC_RUNTIME FALSE)
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+ENDFUNCTION(ImportZSTD)
 
 
 
