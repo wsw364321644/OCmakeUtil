@@ -14,12 +14,20 @@ FUNCTION(ImportTarget TargetName)
         Importimgui()
     elseif(TargetName STREQUAL "mpack")
         Importmpack()
+    elseif(TargetName STREQUAL "rollinghashcpp")
+        Importrollinghashcpp()
     else()
         message(STATUS "no target ${TargetName} to import")
     endif()
 ENDFUNCTION(ImportTarget)
 
 FUNCTION(Importinih)
+    set(TARGET_NAME inih)
+
+    if(TARGET ${TARGET_NAME})
+        return()
+    endif()
+
     if(NOT IMPORT_PROJECT_TAG)
         set(IMPORT_PROJECT_TAG "5cc5e2c24642513aaa5b19126aad42d0e4e0923e") # r58
         message(SEND_ERROR "missing PROJECT_TAG")
@@ -50,7 +58,6 @@ FUNCTION(Importinih)
         ${inih_SOURCE_DIR}/ini.h
     )
 
-    set(TARGET_NAME inih)
     add_library(${TARGET_NAME} SHARED)
     target_sources(
         ${TARGET_NAME}
@@ -124,6 +131,12 @@ FUNCTION(Importinih)
 ENDFUNCTION(Importinih)
 
 FUNCTION(Importimgui)
+    set(TARGET_NAME imgui_a)
+
+    if(TARGET ${TARGET_NAME})
+        return()
+    endif()
+
     if(NOT IMPORT_PROJECT_TAG)
         set(IMPORT_PROJECT_TAG "6ccc561a2ab497ad4ae6ee1dbd3b992ffada35cb") # v1.90.6
         message(SEND_ERROR "missing PROJECT_TAG")
@@ -237,6 +250,12 @@ FUNCTION(Importimgui)
 ENDFUNCTION(Importimgui)
 
 FUNCTION(Importmpack)
+    set(TARGET_NAME mpack)
+
+    if(TARGET ${TARGET_NAME})
+        return()
+    endif()
+
     if(NOT IMPORT_PROJECT_TAG)
         set(IMPORT_PROJECT_TAG "79d3fcd3e04338b06e82d01a62f4aa98c7bad5f7") # v1.1.1
         message(SEND_ERROR "missing PROJECT_TAG")
@@ -278,7 +297,6 @@ FUNCTION(Importmpack)
         ${mpack_SOURCE_DIR}/src/mpack/mpack-writer.c
     )
 
-    set(TARGET_NAME mpack)
     add_library(${TARGET_NAME} SHARED)
     target_sources(
         ${TARGET_NAME}
@@ -310,3 +328,52 @@ FUNCTION(Importmpack)
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
 ENDFUNCTION(Importmpack)
+
+FUNCTION(Importrollinghashcpp)
+    set(TARGET_NAME rollinghashcpp)
+
+    if(TARGET ${TARGET_NAME})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        set(IMPORT_PROJECT_TAG "5cb883b8692f56636835697863ddb80cc8ef2311")
+        message(SEND_ERROR "missing PROJECT_TAG")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:lemire/rollinghashcpp.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/lemire/rollinghashcpp.git")
+    endif()
+
+    FetchContent_Declare(
+        rollinghashcpp_git
+        GIT_REPOSITORY ${GIT_REPOSITORY}
+        GIT_TAG ${IMPORT_PROJECT_TAG}
+    )
+    FetchContent_Populate(rollinghashcpp_git)
+    FetchContent_GetProperties(rollinghashcpp_git)
+
+    NewTargetSource()
+    AddSourceFolder(INCLUDE RECURSE INTERFACE "${rollinghashcpp_git_SOURCE_DIR}/include")
+    source_group(TREE ${rollinghashcpp_git_SOURCE_DIR} FILES ${SourceFiles})
+
+    add_library(${TARGET_NAME} INTERFACE ${SourceFiles})
+
+    AddTargetInclude(${TARGET_NAME})
+
+    install(TARGETS ${TARGET_NAME}
+        EXPORT ${TARGET_NAME}Targets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        PUBLIC_HEADER DESTINATION include
+    )
+
+    install(EXPORT ${TARGET_NAME}Targets
+        FILE ${TARGET_NAME}Targets.cmake
+        NAMESPACE rollinghashcpp::
+        DESTINATION lib/cmake/${TARGET_NAME}
+    )
+ENDFUNCTION(Importrollinghashcpp)
