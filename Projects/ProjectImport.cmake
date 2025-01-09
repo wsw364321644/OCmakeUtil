@@ -79,6 +79,8 @@ FUNCTION(ImportProject ProjectName)
             ImportxxHash()
         elseif(ProjectName STREQUAL "zstd")
             ImportZSTD()
+        elseif(ProjectName STREQUAL "Boost")
+            ImportBOOST()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -333,7 +335,6 @@ FUNCTION(ImportGLEW)
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportGLEW)
 
-
 FUNCTION(ImportRAPIDFUZZ)
     if(IMPORT_PROJECT_TAG)
         set(RAPIDFUZZ_TAG ${IMPORT_PROJECT_TAG})
@@ -362,7 +363,6 @@ FUNCTION(ImportRAPIDFUZZ)
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportRAPIDFUZZ)
 
-
 FUNCTION(ImportxxHash)
     if(IMPORT_PROJECT_TAG)
         set(xxHash_TAG ${IMPORT_PROJECT_TAG})
@@ -387,6 +387,7 @@ FUNCTION(ImportxxHash)
     else()
         set(BUILD_SHARED_LIBS TRUE)
     endif()
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -395,7 +396,6 @@ FUNCTION(ImportxxHash)
 
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportxxHash)
-
 
 FUNCTION(ImportZSTD)
     if(IMPORT_PROJECT_TAG)
@@ -425,7 +425,35 @@ FUNCTION(ImportZSTD)
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportZSTD)
 
+FUNCTION(ImportBOOST)
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(BOOST_RUNTIME_LINK "static")
+    else()
+        set(BOOST_RUNTIME_LINK "shared")
+    endif()
 
+    if(IMPORT_PROJECT_STATIC)
+        set(BUILD_SHARED_LIBS OFF)
+    else()
+        set(BUILD_SHARED_LIBS ON)
+    endif()
+
+    set(DEFAULT_URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.xz)
+
+    if(IMPORT_PROJECT_URL STREQUAL "")
+        set(IMPORT_PROJECT_URL ${DEFAULT_URL})
+    elseif(NOT url)
+        set(IMPORT_PROJECT_URL ${DEFAULT_URL})
+    endif()
+    
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/out)
+ENDFUNCTION(ImportBOOST)
 
 # MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
 # SET(dlls "${ARGN}")

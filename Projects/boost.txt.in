@@ -1,0 +1,53 @@
+cmake_minimum_required(VERSION 3.23)
+include(FetchContent)
+
+project(download_boost)
+
+set(BUILD_SHARED_LIBS @BUILD_SHARED_LIBS@)
+set(BOOST_RUNTIME_LINK @BOOST_RUNTIME_LINK@)
+set(url @IMPORT_PROJECT_URL@)
+set(BOOST_FETCH_NAME "download_boost")
+
+if(BUILD_SHARED_LIBS)
+    set(B2_LINK "shared")
+else()
+    set(B2_LINK "static")
+endif()
+
+if(BOOST_RUNTIME_LINK STREQUAL "static")
+    set(B2_RUNTIME_LINK "static")
+else()
+    set(B2_RUNTIME_LINK "shared")
+endif()
+
+set(B2_COMMAND "${${BOOST_FETCH_NAME}_SOURCE_DIR}/b2 --prefix=${PROJECT_SOURCE_DIR}/out --variant=release --link=${B2_LINK} --runtime-link=${B2_RUNTIME_LINK} install")
+
+FetchContent_Declare(${BOOST_FETCH_NAME}
+    URL ${url}
+    DOWNLOAD_NO_EXTRACT false
+    DOWNLOAD_EXTRACT_TIMESTAMP false
+)
+
+
+FetchContent_MakeAvailable(${BOOST_FETCH_NAME})
+FetchContent_GetProperties(${BOOST_FETCH_NAME}
+    SOURCE_DIR ${BOOST_FETCH_NAME}_SOURCE_DIR
+)
+
+if(WIN32)
+    execute_process(COMMAND cmd /c "${${BOOST_FETCH_NAME}_SOURCE_DIR}/bootstrap.bat"
+        WORKING_DIRECTORY ${${BOOST_FETCH_NAME}_SOURCE_DIR}
+    )
+
+    execute_process(COMMAND cmd /c "${${BOOST_FETCH_NAME}_SOURCE_DIR}/b2  install --prefix=${PROJECT_SOURCE_DIR}/out"
+        WORKING_DIRECTORY ${${BOOST_FETCH_NAME}_SOURCE_DIR}
+    )
+else()
+    execute_process(COMMAND bash "-c" "${${BOOST_FETCH_NAME}_SOURCE_DIR}/bootstrap.sh"
+        WORKING_DIRECTORY ${WORKING_DIRECTORY}
+    )
+    
+    execute_process(COMMAND bash "-c" "${${BOOST_FETCH_NAME}_SOURCE_DIR}/b2 install --prefix=${PROJECT_SOURCE_DIR}/out"
+        WORKING_DIRECTORY ${WORKING_DIRECTORY}
+    )
+endif()
