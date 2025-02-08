@@ -16,6 +16,10 @@ FUNCTION(ImportTarget TargetName)
         Importmpack()
     elseif(TargetName STREQUAL "rollinghashcpp")
         Importrollinghashcpp()
+    elseif(TargetName STREQUAL "rapidjson")
+        Importrapidjson()
+    elseif(TargetName STREQUAL "better-enums")
+        Importbetterenums()
     else()
         message(STATUS "no target ${TargetName} to import")
     endif()
@@ -377,3 +381,49 @@ FUNCTION(Importrollinghashcpp)
         DESTINATION lib/cmake/${TARGET_NAME}
     )
 ENDFUNCTION(Importrollinghashcpp)
+
+FUNCTION(Importbetterenums)
+    set(TARGET_NAME better-enums)
+    if(TARGET ${TARGET_NAME})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        set(IMPORT_PROJECT_TAG "520d8ee39037c9c94aa6e708a4fd6c0fa313ae80") 
+        message(SEND_ERROR "missing PROJECT_TAG")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:aantron/better-enums.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/aantron/better-enums.git")
+    endif()
+
+    FetchContent_Declare(
+        ${TARGET_NAME}
+        GIT_REPOSITORY ${GIT_REPOSITORY}
+        GIT_TAG ${IMPORT_PROJECT_TAG}
+    )
+    FetchContent_MakeAvailable(${TARGET_NAME})
+    FetchContent_GetProperties(${TARGET_NAME})
+
+    set(SourceFiles "")
+    set(HeaderFiles "")
+
+    list(APPEND HeaderFiles
+        ${${TARGET_NAME}_SOURCE_DIR}/enum.h
+    )
+
+    add_library(${TARGET_NAME} INTERFACE)
+    target_sources(
+        ${TARGET_NAME}
+        PUBLIC
+        ${HeaderFiles}
+    )
+    target_include_directories(${TARGET_NAME} PUBLIC
+        $<BUILD_INTERFACE:${${TARGET_NAME}_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
+    )
+    set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
+    set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
+ENDFUNCTION(Importbetterenums)
