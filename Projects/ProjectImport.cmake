@@ -4,7 +4,7 @@ FUNCTION(AddPathAndFind ProjectName Path)
     if(IMPORT_PROJECT_FIND)
         list(APPEND CMAKE_PREFIX_PATH ${Path})
         find_package(${ProjectName} REQUIRED)
-        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE STRING "")
     endif()
 ENDFUNCTION(AddPathAndFind)
 
@@ -81,6 +81,8 @@ FUNCTION(ImportProject ProjectName)
             ImportZSTD()
         elseif(ProjectName STREQUAL "Boost")
             ImportBOOST()
+        elseif(ProjectName STREQUAL "OpenSSL")
+            ImportOPENSSL()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -445,7 +447,7 @@ FUNCTION(ImportBOOST)
     elseif(NOT url)
         set(IMPORT_PROJECT_URL ${DEFAULT_URL})
     endif()
-    
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -454,6 +456,34 @@ FUNCTION(ImportBOOST)
 
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/out)
 ENDFUNCTION(ImportBOOST)
+
+FUNCTION(ImportOPENSSL)
+    if(NOT IMPORT_PROJECT_TAG)
+        set(IMPORT_PROJECT_TAG "98acb6b02839c609ef5b837794e08d906d965335") # 3.4.0
+        message(SEND_ERROR "missing PROJECT_TAG")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:openssl/openssl.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/openssl/openssl.git")
+    endif()
+
+    cmake_path(GET CMAKE_CURRENT_FUNCTION_LIST_DIR PARENT_PATH OCMAKEUTIL_PATH)
+    cmake_path(NORMAL_PATH OCMAKEUTIL_PATH)
+
+    find_package(ZLIB)
+    if(ZLIB_FOUND)
+        cmake_path(GET ZLIB_LIBRARY PARENT_PATH ZLIB_LIBRARY_DIR)
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    message(FATAL_ERROR "end")
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/_deps/openssl-src/install)
+ENDFUNCTION(ImportOPENSSL)
 
 # MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
 # SET(dlls "${ARGN}")

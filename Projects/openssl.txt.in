@@ -1,0 +1,128 @@
+cmake_minimum_required(VERSION 3.25)
+include(FetchContent)
+include(ExternalProject)
+
+set(FETCHCONTENT_QUIET FALSE)
+
+project(project_openssl)
+
+set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
+set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
+set(OCMAKEUTIL_PATH @OCMAKEUTIL_PATH@)
+set(STRAWBERRY_PERL_PATH @STRAWBERRY_PERL_PATH@)
+set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
+set(ZLIB_INCLUDE_DIR @ZLIB_INCLUDE_DIR@)
+set(ZLIB_LIBRARY_DIR @ZLIB_LIBRARY_DIR@)
+cmake_host_system_information(RESULT HOST_IS_64BIT QUERY IS_64BIT)
+
+if(WIN32)
+  if(HOST_IS_64BIT)
+    set(NASM_URL https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win64/nasm-2.16.03-win64.zip)
+  else()
+    set(NASM_URL https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win32/nasm-2.16.03-win32.zip)
+  endif()
+else()
+  message(FATAL_ERROR "Unsupported platform")
+endif()
+
+if(WIN32)
+  if(HOST_IS_64BIT)
+    set(PERL_URL https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_53822_64bit/strawberry-perl-5.38.2.2-64bit-portable.zip)
+  else()
+    set(PERL_URL https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-32bit-portable.zip)
+  endif()
+else()
+  message(FATAL_ERROR "Unsupported platform")
+endif()
+
+include(FindVisualStudio)
+
+if(WIN32)
+  FindVisualStudio()
+endif()
+
+FetchContent_Declare(
+  openssl
+  GIT_REPOSITORY @GIT_REPOSITORY@
+  GIT_TAG @IMPORT_PROJECT_TAG@
+)
+FetchContent_MakeAvailable(openssl)
+FetchContent_GetProperties(openssl)
+set(OPENSSL_INSTALL_PATH ${openssl_SOURCE_DIR}/install)
+
+FetchContent_Declare(download_nasm
+  URL ${NASM_URL}
+  DOWNLOAD_NO_EXTRACT false
+  DOWNLOAD_EXTRACT_TIMESTAMP false
+)
+FetchContent_MakeAvailable(download_nasm)
+FetchContent_GetProperties(download_nasm)
+set(NASM_PATH ${download_nasm_SOURCE_DIR})
+
+if(NOT STRAWBERRY_PERL_PATH)
+  FetchContent_Declare(download_perl
+    URL ${PERL_URL}
+    DOWNLOAD_NO_EXTRACT false
+    DOWNLOAD_EXTRACT_TIMESTAMP false
+  )
+  FetchContent_MakeAvailable(download_perl)
+  FetchContent_GetProperties(download_perl)
+  set(STRAWBERRY_PERL_PATH ${download_perl_SOURCE_DIR})
+endif()
+
+list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${download_nasm_SOURCE_DIR}")
+list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/perl/bin")
+#list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/perl/site/bin")
+#list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/c/bin")
+find_program(PERL_EXECUTABLE NAMES perl DOC "perl Locator" REQUIRED)
+find_program(NASM_EXECUTABLE NAMES nasm DOC "nasm Locator" REQUIRED)
+
+if(WIN32)
+  if(HOST_IS_64BIT)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+      set(VCVAR_PATH "${IZ_MSVS_INSTALL_PATH}/VC/Auxiliary/Build/vcvars64.bat")
+    else()
+      set(VCVAR_PATH "${IZ_MSVS_INSTALL_PATH}/VC/Auxiliary/Build/vcvarsamd64_x86.bat")
+    endif()
+  else()
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+      set(VCVAR_PATH "${IZ_MSVS_INSTALL_PATH}/VC/Auxiliary/Build/vcvarsx86_amd64.bat")
+    else()
+      set(VCVAR_PATH "${IZ_MSVS_INSTALL_PATH}/VC/Auxiliary/Build/vcvars32.bat")
+    endif()
+  endif()
+
+  # message(STATUS "VCVAR_PATH: ${VCVAR_PATH}")
+  #set(ENV{PATH} "${CMAKE_SYSTEM_PROGRAM_PATH};${PATH}")
+
+  configure_file(${OCMAKEUTIL_PATH}/Projects/openssl_build.bat.in ${CMAKE_CURRENT_BINARY_DIR}/openssl_build.bat @ONLY)
+  # cmake_path(CONVERT "${openssl_SOURCE_DIR}/install" TO_NATIVE_PATH_LIST OPENSSL_INSTALL_DIR NORMALIZE)
+  # message(STATUS "dir: ${OPENSSL_INSTALL_DIR}")
+
+  # execute_process(
+  # COMMAND "${VCVAR_PATH}"
+  # COMMAND "${PERL_EXECUTABLE}"
+  # Configure VC-WIN64A
+  # --prefix=${openssl_SOURCE_DIR}/install
+  # WORKING_DIRECTORY ${openssl_SOURCE_DIR}
+  # ENCODING UTF-8
+  # OUTPUT_VARIABLE perl_out
+  # OUTPUT_STRIP_TRAILING_WHITESPACE)
+  # message(STATUS "perl_out: ${perl_out}")
+  # execute_process(
+  #   COMMAND "nmake"
+  #   -f makefile
+  #   WORKING_DIRECTORY ${openssl_SOURCE_DIR}
+  #   ENCODING UTF-8
+  #   OUTPUT_VARIABLE perl_out
+  #   OUTPUT_STRIP_TRAILING_WHITESPACE)
+  # message(STATUS "perl_out: ${perl_out}")
+
+  execute_process(
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/openssl_build.bat
+    WORKING_DIRECTORY ${openssl_SOURCE_DIR}
+    ENCODING UTF-8
+    OUTPUT_VARIABLE build_out
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  message(STATUS "build_out: ${build_out}")
+endif()
