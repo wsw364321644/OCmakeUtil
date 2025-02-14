@@ -4,9 +4,19 @@ FUNCTION(AddPathAndFind ProjectName Path)
     if(IMPORT_PROJECT_FIND)
         list(APPEND CMAKE_PREFIX_PATH ${Path})
         find_package(${ProjectName} REQUIRED)
-        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE STRING "")
+        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
     endif()
 ENDFUNCTION(AddPathAndFind)
+
+FUNCTION(FindInPath ProjectName Path)
+    list(APPEND CMAKE_PREFIX_PATH ${Path})
+    find_package(${ProjectName})
+    if(${ProjectName}_FOUND)
+        set(FindInPath_FOUND TRUE PARENT_SCOPE)
+    else()
+        set(FindInPath_FOUND FALSE PARENT_SCOPE)
+    endif()
+ENDFUNCTION(FindInPath)
 
 FUNCTION(ImportProject ProjectName)
     set(options STATIC_CRT STATIC SSH FIND)
@@ -48,14 +58,15 @@ FUNCTION(ImportProject ProjectName)
 
     if(IMPORT_PROJECT_STATIC)
         if(ProjectName STREQUAL "ZLIB")
-            set(ZLIB_USE_STATIC_LIBS "ON")
+            set(ZLIB_USE_STATIC_LIBS "ON" PARENT_SCOPE)
         elseif(ProjectName STREQUAL "CURL")
-            set(CURL_USE_STATIC_LIBS "ON")
+            set(CURL_USE_STATIC_LIBS "ON" PARENT_SCOPE)
         endif()
     endif()
 
     find_package(${ProjectName})
 
+    set(OCMAKEUTIL_PROJECTS_PATH ${CMAKE_CURRENT_FUNCTION_LIST_DIR})
     if(NOT ${ProjectName}_FOUND)
         if(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
@@ -83,6 +94,8 @@ FUNCTION(ImportProject ProjectName)
             ImportBOOST()
         elseif(ProjectName STREQUAL "OpenSSL")
             ImportOPENSSL()
+        elseif(ProjectName STREQUAL "qiniu")
+            ImportQINIU()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -458,6 +471,13 @@ FUNCTION(ImportBOOST)
 ENDFUNCTION(ImportBOOST)
 
 FUNCTION(ImportOPENSSL)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/_deps/openssl-src/install)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(NOT IMPORT_PROJECT_TAG)
         set(IMPORT_PROJECT_TAG "98acb6b02839c609ef5b837794e08d906d965335") # 3.4.0
         message(SEND_ERROR "missing PROJECT_TAG")
@@ -478,17 +498,36 @@ FUNCTION(ImportOPENSSL)
     endif()
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
-    message(FATAL_ERROR "end")
+    
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/_deps/openssl-src/install)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportOPENSSL)
 
-# MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
-# SET(dlls "${ARGN}")
-#
-# FOREACH(dll ${dlls})
-# SET(${flagsVar} "${${flagsVar}} /DELAYLOAD:${dll}.dll")
-# ENDFOREACH()
-# ENDMACRO()
+
+FUNCTION(ImportQINIU)
+    if(IMPORT_PROJECT_TAG)
+        set(qiniu_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(qiniu_TAG "899f45416943a38c3c1fcd38b85545bf9a4ac647")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@ssh.github.com:qiniu/c-sdk.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/qiniu/c-sdk.git")
+    endif()
+
+    find_package(CURL REQUIRED)
+    find_package(OpenSSL REQUIRED)
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/rundir)
+ENDFUNCTION(ImportQINIU)

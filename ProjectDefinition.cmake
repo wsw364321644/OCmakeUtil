@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
+include(GNUInstallDirs)
 
 FUNCTION(EXCLUDE_FILES_FROM_DIR_IN_LIST _InFileList _excludeDirName)
 	foreach(ITR ${_InFileList})
@@ -113,21 +114,21 @@ macro(AddTargetInclude TARGET_NAME)
 		# file(RELATIVE_PATH relative  directory ${folderpath})
 		target_include_directories(${TARGET_NAME}
 			PUBLIC $<BUILD_INTERFACE:${folderpath}>
-			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
+			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 		)
 	endforeach()
 
 	foreach(folderpath IN LISTS PrivateIncludeFolders)
 		target_include_directories(${TARGET_NAME}
 			PRIVATE $<BUILD_INTERFACE:${folderpath}>
-			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
+			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 		)
 	endforeach()
 
 	foreach(folderpath IN LISTS InterfaceIncludeFolders)
 		target_include_directories(${TARGET_NAME}
 			INTERFACE $<BUILD_INTERFACE:${folderpath}>
-			$<INSTALL_INTERFACE:include/${TARGET_NAME}>
+			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 		)
 	endforeach()
 

@@ -16,9 +16,9 @@ call "%VCVAR_PATH%"
 
 if %IMPORT_PROJECT_STATIC_CRT%=="TRUE" (
     if defined ZLIB_INCLUDE_DIR  (
-        perl Configure VC-WIN64A --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl -static --with-zlib-lib=%ZLIB_LIBRARY_DIR% --with-zlib-include=%ZLIB_INCLUDE_DIR%
+        perl Configure VC-WIN64A --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl -static no-pic no-shared no-threads --with-zlib-lib=%ZLIB_LIBRARY_DIR% --with-zlib-include=%ZLIB_INCLUDE_DIR%
     ) else (
-        perl Configure VC-WIN64A --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl -static
+        perl Configure VC-WIN64A --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl -static no-pic no-shared no-threads
     )
 ) else (
         if defined ZLIB_INCLUDE_DIR  (

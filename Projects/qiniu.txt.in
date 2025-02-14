@@ -1,0 +1,134 @@
+cmake_minimum_required(VERSION 3.25)
+include(FetchContent)
+include(ExternalProject)
+include(CMakePackageConfigHelpers)
+set(FETCHCONTENT_QUIET FALSE)
+
+project(project_qiniu)
+enable_language(C)
+set(CMAKE_C_STANDARD 99)
+
+set(OCMAKEUTIL_PROJECTS_PATH @OCMAKEUTIL_PROJECTS_PATH@)
+set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
+set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
+set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
+set(CURL_USE_STATIC_LIBS @CURL_USE_STATIC_LIBS@)
+
+include(ProjectDefinition)
+find_package(CURL REQUIRED)
+find_package(OpenSSL REQUIRED)
+
+if(IMPORT_PROJECT_STATIC_CRT)
+  if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  endif()
+endif()
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX
+    "${CMAKE_BINARY_DIR}/rundir"
+    CACHE PATH "Directory to install after building" FORCE)
+endif()
+
+FetchContent_Declare(
+  qiniu
+  GIT_REPOSITORY @GIT_REPOSITORY@
+  GIT_TAG @IMPORT_PROJECT_TAG@
+)
+FetchContent_Populate(qiniu)
+FetchContent_GetProperties(qiniu)
+
+set(REGEX_STRING "^const *char *\\*version *= *\\\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\\\"\\;$")
+file(STRINGS "${qiniu_SOURCE_DIR}/qiniu/conf.c" QINIU_VERSION_MAJOR REGEX ${REGEX_STRING})
+list(GET QINIU_VERSION_MAJOR 0 QINIU_VERSION_MAJOR)
+set(QINIU_VERSION_MINOR "${QINIU_VERSION_MAJOR}")
+set(QINIU_VERSION_RELEASE "${QINIU_VERSION_MAJOR}")
+string(REGEX REPLACE ${REGEX_STRING} "\\1" QINIU_VERSION_MAJOR "${QINIU_VERSION_MAJOR}")
+string(REGEX REPLACE ${REGEX_STRING} "\\2" QINIU_VERSION_MINOR "${QINIU_VERSION_MINOR}")
+string(REGEX REPLACE ${REGEX_STRING} "\\3" QINIU_VERSION_RELEASE "${QINIU_VERSION_RELEASE}")
+set(QINIU_VERSION_STRING "${QINIU_VERSION_MAJOR}.${QINIU_VERSION_MINOR}.${QINIU_VERSION_RELEASE}")
+
+NewTargetSource()
+file(GLOB PublicIncludeFiles "${qiniu_SOURCE_DIR}/b64/*.h" "${qiniu_SOURCE_DIR}/cJSON/*.h" "${qiniu_SOURCE_DIR}/hashmap/*.h" "${qiniu_SOURCE_DIR}/qiniu/*.h")
+file(GLOB PRIVATE_HEADER_FILES "${qiniu_SOURCE_DIR}/qiniu/private/*.h")
+file(GLOB SOURCE_C_FILES "${qiniu_SOURCE_DIR}/b64/*.c" "${qiniu_SOURCE_DIR}/cJSON/*.c" "${qiniu_SOURCE_DIR}/hashmap/*.c" "${qiniu_SOURCE_DIR}/qiniu/*.c")
+set(SourceFiles ${PublicIncludeFiles} ${PRIVATE_HEADER_FILES} ${SOURCE_C_FILES})
+set(PublicIncludeFolders ${qiniu_SOURCE_DIR})
+
+function(update_lib TARGET_NAME)
+  set(QINIU_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}/")
+  if(WIN32)
+    set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:msvcrt")
+    set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_RELEASE "/NODEFAULTLIB:LIBCMTD.LIB /NODEFAULTLIB:msvcrtd")
+  endif()
+
+  target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
+  target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::SSL)
+  target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::Crypto)
+
+  AddTargetInclude(${TARGET_NAME})
+
+  install(TARGETS ${TARGET_NAME}
+    EXPORT ${TARGET_NAME}Targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+  install(EXPORT ${TARGET_NAME}Targets
+    FILE ${TARGET_NAME}Targets.cmake
+    NAMESPACE qiniu::
+    DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
+  )
+
+  configure_package_config_file(
+    ${OCMAKEUTIL_PROJECTS_PATH}/qiniuConfig.cmake.in
+    ${PROJECT_BINARY_DIR}/${TARGET_NAME}Config.cmake
+    INSTALL_DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
+  )
+
+  install(FILES ${PROJECT_BINARY_DIR}/${TARGET_NAME}Config.cmake
+    DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
+  )
+
+  write_basic_package_version_file(
+    ${PROJECT_BINARY_DIR}/${TARGET_NAME}ConfigVersion.cmake
+    VERSION ${QINIU_VERSION_STRING}
+    COMPATIBILITY AnyNewerVersion)
+
+  install(FILES ${PROJECT_BINARY_DIR}/${TARGET_NAME}ConfigVersion.cmake
+    DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
+  )
+endfunction()
+
+install(DIRECTORY
+  "${qiniu_SOURCE_DIR}/b64/"
+  DESTINATION include/b64/
+  FILES_MATCHING PATTERN "*.h")
+
+install(DIRECTORY
+  "${qiniu_SOURCE_DIR}/cJSON/"
+  DESTINATION include/cJSON/
+  FILES_MATCHING PATTERN "*.h")
+
+install(DIRECTORY
+  "${qiniu_SOURCE_DIR}/hashmap/"
+  DESTINATION include/hashmap/
+  FILES_MATCHING PATTERN "*.h")
+
+install(DIRECTORY
+  "${qiniu_SOURCE_DIR}/qiniu/"
+  DESTINATION include/qiniu/
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN "private" EXCLUDE)
+
+SET(TARGET_NAME qiniu)
+add_library(${TARGET_NAME} SHARED ${SourceFiles})
+target_compile_definitions(${TARGET_NAME} PRIVATE -DCOMPILING_QINIU_LIBRARY_DLL)
+target_compile_definitions(${TARGET_NAME} INTERFACE -DUSING_QINIU_LIBRARY_DLL)
+update_lib(${TARGET_NAME})
+
+SET(TARGET_NAME ${TARGET_NAME}_static)
+add_library(${TARGET_NAME} STATIC ${SourceFiles})
+update_lib(${TARGET_NAME})
