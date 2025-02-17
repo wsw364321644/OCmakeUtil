@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
+include(FetchContent)
 
 FUNCTION(ImportTarget TargetName)
     set(options STATIC SSH)

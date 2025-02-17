@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
+set(OCMAKEUTIL_PROJECTS_PATH ${CMAKE_CURRENT_FUNCTION_LIST_DIR})
 
 FUNCTION(AddPathAndFind ProjectName Path)
     if(IMPORT_PROJECT_FIND)
@@ -11,6 +12,7 @@ ENDFUNCTION(AddPathAndFind)
 FUNCTION(FindInPath ProjectName Path)
     list(APPEND CMAKE_PREFIX_PATH ${Path})
     find_package(${ProjectName})
+
     if(${ProjectName}_FOUND)
         set(FindInPath_FOUND TRUE PARENT_SCOPE)
     else()
@@ -66,7 +68,6 @@ FUNCTION(ImportProject ProjectName)
 
     find_package(${ProjectName})
 
-    set(OCMAKEUTIL_PROJECTS_PATH ${CMAKE_CURRENT_FUNCTION_LIST_DIR})
     if(NOT ${ProjectName}_FOUND)
         if(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
@@ -100,7 +101,15 @@ FUNCTION(ImportProject ProjectName)
             message(STATUS "no project ${ProjectName} to import")
         endif()
     else()
-        message(STATUS "Before Import Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}")
+        message(STATUS "Before Import Find ${ProjectName}")
+
+        if(${ProjectName}_DIR)
+            message(STATUS "Before Import Find ${ProjectName} DIR :${${ProjectName}_DIR}")
+        endif()
+
+        if(${ProjectName}_INCLUDE_DIR)
+            message(STATUS "Before Import Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}")
+        endif()
     endif()
 ENDFUNCTION(ImportProject)
 
@@ -473,6 +482,7 @@ ENDFUNCTION(ImportBOOST)
 FUNCTION(ImportOPENSSL)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/_deps/openssl-src/install)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
     if(FindInPath_FOUND)
         AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
         return()
@@ -489,22 +499,32 @@ FUNCTION(ImportOPENSSL)
         set(GIT_REPOSITORY "https://github.com/openssl/openssl.git")
     endif()
 
-    cmake_path(GET CMAKE_CURRENT_FUNCTION_LIST_DIR PARENT_PATH OCMAKEUTIL_PATH)
-    cmake_path(NORMAL_PATH OCMAKEUTIL_PATH)
-
+    # cmake_path(GET CMAKE_CURRENT_FUNCTION_LIST_DIR PARENT_PATH OCMAKEUTIL_PATH)
+    # cmake_path(NORMAL_PATH OCMAKEUTIL_PATH)
     find_package(ZLIB)
+
     if(ZLIB_FOUND)
         cmake_path(GET ZLIB_LIBRARY PARENT_PATH ZLIB_LIBRARY_DIR)
     endif()
 
+    find_package(Perl REQUIRED)
+    cmake_path(GET PERL_EXECUTABLE PARENT_PATH STRAWBERRY_PERL_PATH)
+    cmake_path(GET STRAWBERRY_PERL_PATH PARENT_PATH STRAWBERRY_PERL_PATH)
+    cmake_path(GET STRAWBERRY_PERL_PATH PARENT_PATH STRAWBERRY_PERL_PATH)
+
+    include(CMakeDetermineASM_NASMCompiler)
+    if(NOT CMAKE_ASM_NASM_COMPILER)
+        message(FATAL_ERROR "NASM NOT FOUND")
+    endif()
+    cmake_path(GET CMAKE_ASM_NASM_COMPILER PARENT_PATH NASM_PATH)
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
-    
+
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
     AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportOPENSSL)
-
 
 FUNCTION(ImportQINIU)
     if(IMPORT_PROJECT_TAG)
@@ -523,7 +543,7 @@ FUNCTION(ImportQINIU)
     find_package(OpenSSL REQUIRED)
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
-    
+
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release

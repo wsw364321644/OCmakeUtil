@@ -1,11 +1,8 @@
 cmake_minimum_required(VERSION 3.23)
 
 project(ocmake_util)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/Modules" "${CMAKE_CURRENT_SOURCE_DIR}/Projects")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/Modules" "${CMAKE_CURRENT_SOURCE_DIR}/Projects" "${CMAKE_CURRENT_SOURCE_DIR}/Program")
 list(REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} CACHE INTERNAL "CMAKE_MODULE_PATH")
-include(FetchContent)
-include(ExternalProject)
+set(OCMAKEUTIL_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 include(ProjectDefinition)
-include(ProjectImport)
-include(TargetImport)
