@@ -97,6 +97,8 @@ FUNCTION(ImportProject ProjectName)
             ImportOPENSSL()
         elseif(ProjectName STREQUAL "qiniu")
             ImportQINIU()
+        elseif(ProjectName STREQUAL "folly")
+            ImportFOLLY()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -513,9 +515,11 @@ FUNCTION(ImportOPENSSL)
     cmake_path(GET STRAWBERRY_PERL_PATH PARENT_PATH STRAWBERRY_PERL_PATH)
 
     include(CMakeDetermineASM_NASMCompiler)
+
     if(NOT CMAKE_ASM_NASM_COMPILER)
         message(FATAL_ERROR "NASM NOT FOUND")
     endif()
+
     cmake_path(GET CMAKE_ASM_NASM_COMPILER PARENT_PATH NASM_PATH)
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
@@ -551,3 +555,38 @@ FUNCTION(ImportQINIU)
 
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/rundir)
 ENDFUNCTION(ImportQINIU)
+
+FUNCTION(ImportFOLLY)
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
+
+    if(IMPORT_PROJECT_TAG)
+        set(folly_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(folly_TAG "ba25f8853f8f6697cac2ede73448ab0a1be72be7") # v2025.02.24.00
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:facebook/folly.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/facebook/folly.git")
+    endif()
+
+    if(IMPORT_PROJECT_STATIC)
+        set(BUILD_SHARED_LIBS OFF)
+    else()
+        set(BUILD_SHARED_LIBS ON)
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+ 
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+ENDFUNCTION(ImportFOLLY)
