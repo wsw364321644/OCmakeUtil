@@ -99,6 +99,8 @@ FUNCTION(ImportProject ProjectName)
             ImportQINIU()
         elseif(ProjectName STREQUAL "folly")
             ImportFOLLY()
+        elseif(ProjectName STREQUAL "TBB")
+            ImportTBB()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -111,6 +113,10 @@ FUNCTION(ImportProject ProjectName)
 
         if(${ProjectName}_INCLUDE_DIR)
             message(STATUS "Before Import Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}")
+        endif()
+
+        if(ProjectName STREQUAL "TBB")
+            target_compile_definitions(TBB::tbb INTERFACE -D__TBB_BUILD=1)
         endif()
     endif()
 ENDFUNCTION(ImportProject)
@@ -587,6 +593,43 @@ FUNCTION(ImportFOLLY)
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
- 
+
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 ENDFUNCTION(ImportFOLLY)
+
+FUNCTION(ImportTBB)
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
+
+    if(IMPORT_PROJECT_TAG)
+        set(oneTBB_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(oneTBB_TAG "0c0ff192a2304e114bc9e6557582dfba101360ff") # 2022.0.0
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:uxlfoundation/oneTBB.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/uxlfoundation/oneTBB.git")
+    endif()
+
+    if(IMPORT_PROJECT_STATIC)
+        set(BUILD_SHARED_LIBS OFF)
+    else()
+        set(BUILD_SHARED_LIBS ON)
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+
+    target_compile_definitions(TBB::tbb INTERFACE -D__TBB_BUILD=1)
+ENDFUNCTION(ImportTBB)
