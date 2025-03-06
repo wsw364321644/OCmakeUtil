@@ -20,6 +20,23 @@ FUNCTION(FindInPath ProjectName Path)
     endif()
 ENDFUNCTION(FindInPath)
 
+FUNCTION(PostImportProject)
+    find_package(${ProjectName})
+
+    if(ProjectName STREQUAL "TBB")
+        target_compile_definitions(TBB::tbb INTERFACE -D__TBB_BUILD=1)
+        install(
+            FILES "${TBB_DIR}/../../../${CMAKE_INSTALL_BINDIR}/tbb12.dll"
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
+        )
+    elseif(ProjectName STREQUAL "qiniu")
+        install(
+            FILES "${qiniu_DIR}/../../../${CMAKE_INSTALL_BINDIR}/qiniu.dll"
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
+        )
+    endif()
+ENDFUNCTION(PostImportProject)
+
 FUNCTION(ImportProject ProjectName)
     set(options STATIC_CRT STATIC SSH FIND)
     set(oneValueArgs URL TAG BIT)
@@ -114,11 +131,9 @@ FUNCTION(ImportProject ProjectName)
         if(${ProjectName}_INCLUDE_DIR)
             message(STATUS "Before Import Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}")
         endif()
-
-        if(ProjectName STREQUAL "TBB")
-            target_compile_definitions(TBB::tbb INTERFACE -D__TBB_BUILD=1)
-        endif()
     endif()
+
+    PostImportProject()
 ENDFUNCTION(ImportProject)
 
 FUNCTION(ImportZLIB)
@@ -630,6 +645,4 @@ FUNCTION(ImportTBB)
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
     AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-
-    target_compile_definitions(TBB::tbb INTERFACE -D__TBB_BUILD=1)
 ENDFUNCTION(ImportTBB)
