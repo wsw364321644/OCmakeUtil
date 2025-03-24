@@ -45,6 +45,8 @@ FUNCTION(ImportProject ProjectName)
     cmake_parse_arguments(IMPORT_PROJECT "${options}" "${oneValueArgs}"
         "${multiValueArgs}" ${ARGN})
 
+    set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_${CMAKE_CXX_COMPILER_ID}")
+
     if(IMPORT_PROJECT_STATIC_CRT)
         set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_STATIC_CRT")
     endif()
@@ -137,6 +139,14 @@ FUNCTION(ImportProject ProjectName)
 ENDFUNCTION(ImportProject)
 
 FUNCTION(ImportZLIB)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_STATIC_CRT)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
@@ -164,10 +174,18 @@ FUNCTION(ImportZLIB)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportZLIB)
 
 FUNCTION(ImportCURL)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_STATIC_CRT)
         set(CURL_STATIC_CRT ON)
     else()
@@ -199,10 +217,18 @@ FUNCTION(ImportCURL)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportCURL)
 
 FUNCTION(ImportSQLITE3)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_STATIC_CRT)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
@@ -227,10 +253,18 @@ FUNCTION(ImportSQLITE3)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSQLITE3)
 
 FUNCTION(ImportLIBUV)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_STATIC_CRT)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
@@ -258,10 +292,18 @@ FUNCTION(ImportLIBUV)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportLIBUV)
 
 FUNCTION(ImportDETOURS)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_TAG)
         set(DETOURS_TAG ${IMPORT_PROJECT_TAG})
     else()
@@ -281,10 +323,18 @@ FUNCTION(ImportDETOURS)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower})
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportDETOURS)
 
 FUNCTION(ImportSDL2)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_TAG)
         set(SDL2_TAG ${IMPORT_PROJECT_TAG})
     else()
@@ -316,10 +366,18 @@ FUNCTION(ImportSDL2)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSDL2)
 
 FUNCTION(ImportMbedTLS)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_TAG)
         set(MbedTLS_TAG ${IMPORT_PROJECT_TAG})
     else()
@@ -351,10 +409,18 @@ FUNCTION(ImportMbedTLS)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportMbedTLS)
 
 FUNCTION(ImportGLEW)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_TAG)
         set(GLEW_TAG ${IMPORT_PROJECT_TAG})
     else()
@@ -379,10 +445,18 @@ FUNCTION(ImportGLEW)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportGLEW)
 
 FUNCTION(ImportRAPIDFUZZ)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_TAG)
         set(RAPIDFUZZ_TAG ${IMPORT_PROJECT_TAG})
     else()
@@ -407,10 +481,18 @@ FUNCTION(ImportRAPIDFUZZ)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportRAPIDFUZZ)
 
 FUNCTION(ImportxxHash)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_TAG)
         set(xxHash_TAG ${IMPORT_PROJECT_TAG})
     else()
@@ -441,10 +523,18 @@ FUNCTION(ImportxxHash)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportxxHash)
 
 FUNCTION(ImportZSTD)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_TAG)
         set(zstd_TAG ${IMPORT_PROJECT_TAG})
     else()
@@ -469,10 +559,18 @@ FUNCTION(ImportZSTD)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportZSTD)
 
 FUNCTION(ImportBOOST)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/out)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_STATIC_CRT)
         set(BOOST_RUNTIME_LINK "static")
     else()
@@ -499,7 +597,7 @@ FUNCTION(ImportBOOST)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/out)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportBOOST)
 
 FUNCTION(ImportOPENSSL)
@@ -530,18 +628,20 @@ FUNCTION(ImportOPENSSL)
         cmake_path(GET ZLIB_LIBRARY PARENT_PATH ZLIB_LIBRARY_DIR)
     endif()
 
-    find_package(Perl REQUIRED)
-    cmake_path(GET PERL_EXECUTABLE PARENT_PATH STRAWBERRY_PERL_PATH)
-    cmake_path(GET STRAWBERRY_PERL_PATH PARENT_PATH STRAWBERRY_PERL_PATH)
-    cmake_path(GET STRAWBERRY_PERL_PATH PARENT_PATH STRAWBERRY_PERL_PATH)
+    if(MSVC)
+        find_package(Perl REQUIRED)
+        cmake_path(GET PERL_EXECUTABLE PARENT_PATH STRAWBERRY_PERL_PATH)
+        cmake_path(GET STRAWBERRY_PERL_PATH PARENT_PATH STRAWBERRY_PERL_PATH)
+        cmake_path(GET STRAWBERRY_PERL_PATH PARENT_PATH STRAWBERRY_PERL_PATH)
 
-    include(CMakeDetermineASM_NASMCompiler)
+        include(CMakeDetermineASM_NASMCompiler)
 
-    if(NOT CMAKE_ASM_NASM_COMPILER)
-        message(FATAL_ERROR "NASM NOT FOUND")
+        if(NOT CMAKE_ASM_NASM_COMPILER)
+            message(FATAL_ERROR "NASM NOT FOUND")
+        endif()
+
+        cmake_path(GET CMAKE_ASM_NASM_COMPILER PARENT_PATH NASM_PATH)
     endif()
-
-    cmake_path(GET CMAKE_ASM_NASM_COMPILER PARENT_PATH NASM_PATH)
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
 
@@ -552,6 +652,14 @@ FUNCTION(ImportOPENSSL)
 ENDFUNCTION(ImportOPENSSL)
 
 FUNCTION(ImportQINIU)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/rundir)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_TAG)
         set(qiniu_TAG ${IMPORT_PROJECT_TAG})
     else()
@@ -574,10 +682,18 @@ FUNCTION(ImportQINIU)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/rundir)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportQINIU)
 
 FUNCTION(ImportFOLLY)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_STATIC_CRT)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
@@ -609,10 +725,18 @@ FUNCTION(ImportFOLLY)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportFOLLY)
 
 FUNCTION(ImportTBB)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
     if(IMPORT_PROJECT_STATIC_CRT)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
@@ -644,5 +768,5 @@ FUNCTION(ImportTBB)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportTBB)

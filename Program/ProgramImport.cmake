@@ -57,60 +57,71 @@ FUNCTION(ImportProgram ProgramName)
 ENDFUNCTION(ImportProgram)
 
 FUNCTION(ImportPERL)
-    if(NOT IMPORT_PROGRAM_URL)
-        message(FATAL_ERROR "URL NOT SET")
-
-        if(HOST_IS_64BIT)
-            set(IMPORT_PROGRAM_URL https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_53822_64bit/strawberry-perl-5.38.2.2-64bit-portable.zip)
-        else()
-            set(IMPORT_PROGRAM_URL https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-32bit-portable.zip)
-        endif()
-    endif()
-
-    FetchContent_Declare(download_perl
-        PREFIX ${WORKING_DIRECTORY}
-        URL ${IMPORT_PROGRAM_URL}
-        DOWNLOAD_NO_EXTRACT false
-        DOWNLOAD_EXTRACT_TIMESTAMP false
-    )
-    FetchContent_MakeAvailable(download_perl)
-    FetchContent_GetProperties(download_perl)
-    set(STRAWBERRY_PERL_PATH ${download_perl_SOURCE_DIR})
-
+    set(STRAWBERRY_PERL_PATH ${WORKING_DIRECTORY}/strawberry-perl)
     list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/perl/bin")
 
     # list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/perl/site/bin")
     # list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/c/bin")
     # find_program(PERL_EXECUTABLE NAMES perl DOC "perl Locator" REQUIRED)
+    find_package(Perl)
+
+    if(NOT Perl_FOUND)
+        if(NOT IMPORT_PROGRAM_URL)
+            message(FATAL_ERROR "URL NOT SET")
+
+            if(HOST_IS_64BIT)
+                set(IMPORT_PROGRAM_URL https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_53822_64bit/strawberry-perl-5.38.2.2-64bit-portable.zip)
+            else()
+                set(IMPORT_PROGRAM_URL https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-32bit-portable.zip)
+            endif()
+        endif()
+
+        FetchContent_Declare(download_perl
+            PREFIX ${WORKING_DIRECTORY}
+            URL ${IMPORT_PROGRAM_URL}
+            DOWNLOAD_NO_EXTRACT false
+            DOWNLOAD_EXTRACT_TIMESTAMP false
+        )
+        FetchContent_MakeAvailable(download_perl)
+        FetchContent_GetProperties(download_perl)
+        file(RENAME ${download_perl_SOURCE_DIR} ${STRAWBERRY_PERL_PATH})
+    endif()
+
     find_package(Perl REQUIRED)
 
     set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
 ENDFUNCTION(ImportPERL)
 
 FUNCTION(ImportNASM)
-    if(NOT IMPORT_PROGRAM_URL)
-        message(FATAL_ERROR "URL NOT SET")
-
-        if(HOST_IS_64BIT)
-            set(NASM_URL https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win64/nasm-2.16.03-win64.zip)
-        else()
-            set(NASM_URL https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win32/nasm-2.16.03-win32.zip)
-        endif()
-    endif()
-
-    FetchContent_Declare(download_nasm
-        PREFIX ${WORKING_DIRECTORY}
-        URL ${NASM_URL}
-        DOWNLOAD_NO_EXTRACT false
-        DOWNLOAD_EXTRACT_TIMESTAMP false
-    )
-    FetchContent_MakeAvailable(download_nasm)
-    FetchContent_GetProperties(download_nasm)
-    list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${download_nasm_SOURCE_DIR}")
+    set(NASM_PATH ${WORKING_DIRECTORY}/nasm)
+    list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${NASM_PATH}")
     include(CMakeDetermineASM_NASMCompiler)
 
     if(NOT CMAKE_ASM_NASM_COMPILER)
-        message(FATAL_ERROR "NASM NOT FOUND")
+        if(NOT IMPORT_PROGRAM_URL)
+            message(FATAL_ERROR "URL NOT SET")
+
+            if(HOST_IS_64BIT)
+                set(NASM_URL https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win64/nasm-2.16.03-win64.zip)
+            else()
+                set(NASM_URL https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/win32/nasm-2.16.03-win32.zip)
+            endif()
+        endif()
+
+        FetchContent_Declare(download_nasm
+            PREFIX ${WORKING_DIRECTORY}
+            URL ${NASM_URL}
+            DOWNLOAD_NO_EXTRACT false
+            DOWNLOAD_EXTRACT_TIMESTAMP false
+        )
+        FetchContent_MakeAvailable(download_nasm)
+        FetchContent_GetProperties(download_nasm)
+        file(RENAME ${download_nasm_SOURCE_DIR} ${NASM_PATH})
+        include(CMakeDetermineASM_NASMCompiler)
+
+        if(NOT CMAKE_ASM_NASM_COMPILER)
+            message(FATAL_ERROR "NASM NOT FOUND")
+        endif()
     endif()
 
     set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")

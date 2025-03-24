@@ -16,11 +16,11 @@ set(ZLIB_INCLUDE_DIR @ZLIB_INCLUDE_DIR@)
 set(ZLIB_LIBRARY_DIR @ZLIB_LIBRARY_DIR@)
 cmake_host_system_information(RESULT HOST_IS_64BIT QUERY IS_64BIT)
 
-add_subdirectory(${OCMAKEUTIL_PATH})
+add_subdirectory(${OCMAKEUTIL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/ocmakeutil)
 
 include(FindVisualStudio)
 
-if(WIN32)
+if(MSVC)
   FindVisualStudio()
 endif()
 
@@ -33,7 +33,7 @@ FetchContent_MakeAvailable(openssl)
 FetchContent_GetProperties(openssl)
 set(OPENSSL_INSTALL_PATH ${openssl_SOURCE_DIR}/install)
 
-if(WIN32)
+if(MSVC)
   if(HOST_IS_64BIT)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
       set(VCVAR_PATH "${IZ_MSVS_INSTALL_PATH}/VC/Auxiliary/Build/vcvars64.bat")
