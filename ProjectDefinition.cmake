@@ -48,6 +48,7 @@ macro(SearchSourceFiles FolderPath IsRecurse)
 	if(WIN32)
 		EXCLUDE_FILES_FROM_DIR_IN_LIST("${TmpSource}" "Linux")
 		EXCLUDE_FILES_FROM_DIR_IN_LIST("${TmpSource}" "linux")
+
 	# message(STATUS "EXCLUDED_FILES ${EXCLUDED_FILES}")
 	elseif(UNIX)
 		EXCLUDE_FILES_FROM_DIR_IN_LIST("${TmpSource}" "Windows")
@@ -63,9 +64,10 @@ macro(SearchSourceFiles FolderPath IsRecurse)
 	endif()
 
 	# message(STATUS "EXCLUDED_FILES ${EXCLUDED_FILES}")
-	if(NOT EXCLUDED_FILES STREQUAL "")
-		set(SourceFiles "${SourceFiles};${EXCLUDED_FILES}")
-	endif()
+	# if(NOT EXCLUDED_FILES STREQUAL "")
+	# set(SourceFiles "${SourceFiles};${EXCLUDED_FILES}")
+	# endif()
+	list(APPEND SourceFiles ${EXCLUDED_FILES})
 endmacro(SearchSourceFiles)
 
 macro(AddSourceFolder)
@@ -75,29 +77,37 @@ macro(AddSourceFolder)
 	cmake_parse_arguments(AddSourceFolder "${options}" "${oneValueArgs}"
 		"${multiValueArgs}" ${ARGN})
 
-	if(AddSourceFolder_INCLUDE)
-		foreach(LETTER ${AddSourceFolder_PRIVATE})
-			list(APPEND PrivateIncludeFolders ${LETTER})
-			SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
-		endforeach()
+	foreach(LETTER ${AddSourceFolder_PRIVATE})
+		list(LENGTH PrivateIncludeFolders FoldersLength)
+		list(APPEND PrivateIncludeFolders ${LETTER})
+		SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
+		set("PrivateIncludeFiles${FoldersLength}" "")
+		list(APPEND "PrivateIncludeFiles${FoldersLength}" ${EXCLUDED_FILES})
+	endforeach()
 
-		foreach(LETTER ${AddSourceFolder_PUBLIC})
-			list(APPEND PublicIncludeFolders ${LETTER})
-			SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
-			list(APPEND PublicIncludeFiles ${EXCLUDED_FILES})
-		endforeach()
+	foreach(LETTER ${AddSourceFolder_UNPARSED_ARGUMENTS})
+		list(LENGTH PrivateIncludeFolders FoldersLength)
+		list(APPEND PrivateIncludeFolders ${LETTER})
+		SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
+		set("PrivateIncludeFiles${FoldersLength}" "")
+		list(APPEND "PrivateIncludeFiles${FoldersLength}" ${EXCLUDED_FILES})
+	endforeach()
 
-		foreach(LETTER ${AddSourceFolder_INTERFACE})
-			list(APPEND InterfaceIncludeFolders ${LETTER})
-			SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
-			list(APPEND InterfaceIncludeFiles ${EXCLUDED_FILES})
-		endforeach()
-	else()
-		foreach(LETTER ${AddSourceFolder_UNPARSED_ARGUMENTS})
-			list(APPEND PrivateIncludeFolders ${LETTER})
-			SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
-		endforeach()
-	endif()
+	foreach(LETTER ${AddSourceFolder_PUBLIC})
+		list(LENGTH PublicIncludeFolders FoldersLength)
+		list(APPEND PublicIncludeFolders ${LETTER})
+		SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
+		set("PublicIncludeFiles${FoldersLength}" "")
+		list(APPEND "PublicIncludeFiles${FoldersLength}" ${EXCLUDED_FILES})
+	endforeach()
+
+	foreach(LETTER ${AddSourceFolder_INTERFACE})
+		list(LENGTH InterfaceIncludeFolders FoldersLength)
+		list(APPEND InterfaceIncludeFolders ${LETTER})
+		SearchSourceFiles(${LETTER} ${AddSourceFolder_RECURSE})
+		set("InterfaceIncludeFiles${FoldersLength}" "")
+		list(APPEND "InterfaceIncludeFiles${FoldersLength}" ${EXCLUDED_FILES})
+	endforeach()
 endmacro(AddSourceFolder)
 
 macro(NewTargetSource)
@@ -105,35 +115,151 @@ macro(NewTargetSource)
 	set(PrivateIncludeFolders "")
 	set(PublicIncludeFolders "")
 	set(InterfaceIncludeFolders "")
-	set(PublicIncludeFiles "")
-	set(InterfaceIncludeFiles "")
+
+	# set(PrivateIncludeFiles "")
+	# set(PublicIncludeFiles "")
+	# set(InterfaceIncludeFiles "")
 endmacro(NewTargetSource)
 
 macro(AddTargetInclude TARGET_NAME)
-	foreach(folderpath IN LISTS PublicIncludeFolders)
-		# file(RELATIVE_PATH relative  directory ${folderpath})
-		target_include_directories(${TARGET_NAME}
-			PUBLIC $<BUILD_INTERFACE:${folderpath}>
-			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-		)
-	endforeach()
+	# foreach(folderpath IN LISTS PublicIncludeFolders)
+	# target_include_directories(${TARGET_NAME}
+	# PUBLIC $<BUILD_INTERFACE:${folderpath}>
+	# $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+	# )
+	# endforeach()
 
-	foreach(folderpath IN LISTS PrivateIncludeFolders)
-		target_include_directories(${TARGET_NAME}
-			PRIVATE $<BUILD_INTERFACE:${folderpath}>
-			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-		)
-	endforeach()
+	# foreach(folderpath IN LISTS PrivateIncludeFolders)
+	# target_include_directories(${TARGET_NAME}
+	# PRIVATE $<BUILD_INTERFACE:${folderpath}>
+	# $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+	# )
+	# endforeach()
 
-	foreach(folderpath IN LISTS InterfaceIncludeFolders)
-		target_include_directories(${TARGET_NAME}
-			INTERFACE $<BUILD_INTERFACE:${folderpath}>
-			$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-		)
-	endforeach()
+	# foreach(folderpath IN LISTS InterfaceIncludeFolders)
+	# target_include_directories(${TARGET_NAME}
+	# INTERFACE $<BUILD_INTERFACE:${folderpath}>
+	# $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+	# )
+	# endforeach()
 
-	set_target_properties(${TARGET_NAME} PROPERTIES PUBLIC_HEADER "${PublicIncludeFiles}${InterfaceIncludeFiles}")
+	# set_target_properties(${TARGET_NAME} PROPERTIES PUBLIC_HEADER "${PublicIncludeFiles}${InterfaceIncludeFiles}")
+	list(LENGTH PrivateIncludeFolders FoldersLength)
+
+	if(${FoldersLength} GREATER 0)
+		MATH(EXPR FoldersLength "${FoldersLength}-1")
+
+		foreach(FolderIndex RANGE ${FoldersLength})
+			list(GET PrivateIncludeFolders ${FolderIndex} PrivateIncludeFolder)
+			list(LENGTH "PrivateIncludeFiles${FoldersLength}" FilesLength)
+
+			if(${FilesLength} GREATER 0)
+				target_include_directories(${TARGET_NAME}
+					PRIVATE ${PrivateIncludeFolder})
+				target_sources(${TARGET_NAME}
+					PRIVATE
+					${PrivateIncludeFiles${FoldersLength}}
+				)
+
+				# MATH(EXPR FilesLength "${FilesLength}-1")
+
+				# foreach(FileIndex RANGE ${FilesLength})
+				# list(GET "PrivateIncludeFiles${FoldersLength}" ${FileIndex} PrivateIncludeFile)
+				# target_sources(${TARGET_NAME}
+				# PRIVATE
+				# ${PrivateIncludeFile}
+				# )
+				# endforeach()
+			endif()
+		endforeach()
+	endif()
+
+	list(LENGTH PublicIncludeFolders FoldersLength)
+
+	if(${FoldersLength} GREATER 0)
+		MATH(EXPR FoldersLength "${FoldersLength}-1")
+
+		foreach(FolderIndex RANGE ${FoldersLength})
+			list(GET PublicIncludeFolders ${FolderIndex} PublicIncludeFolder)
+			list(LENGTH "PublicIncludeFiles${FoldersLength}" FilesLength)
+
+			if(${FilesLength} GREATER 0)
+				MATH(EXPR FilesLength "${FilesLength}-1")
+
+				foreach(FileIndex RANGE ${FilesLength})
+					list(GET "PublicIncludeFiles${FoldersLength}" ${FileIndex} PublicIncludeFile)
+					cmake_path(RELATIVE_PATH PublicIncludeFile
+						BASE_DIRECTORY ${PublicIncludeFolder}
+						OUTPUT_VARIABLE PublicIncludeFileRelativePath)
+					cmake_path(APPEND TARGET_NAME CMAKE_INSTALL_INCLUDEDIR PublicIncludeFileRelativePath OUTPUT_VARIABLE PublicIncludeFileInstallPath])
+					target_sources(${TARGET_NAME}
+						PUBLIC
+						FILE_SET HEADERS
+						BASE_DIRS ${PublicIncludeFolder}
+						FILES
+						$<BUILD_INTERFACE:${PublicIncludeFile}>
+						$<INSTALL_INTERFACE:${PublicIncludeFileInstallPath}>
+					)
+				endforeach()
+			endif()
+		endforeach()
+	endif()
+
+	list(LENGTH InterfaceIncludeFolders FoldersLength)
+
+	if(${FoldersLength} GREATER 0)
+		MATH(EXPR FoldersLength "${FoldersLength}-1")
+
+		foreach(FolderIndex RANGE ${FoldersLength})
+			list(GET InterfaceIncludeFolders ${FolderIndex} InterfaceIncludeFolder)
+			list(LENGTH "InterfaceIncludeFiles${FoldersLength}" FilesLength)
+
+			if(${FilesLength} GREATER 0)
+				MATH(EXPR FilesLength "${FilesLength}-1")
+
+				foreach(FileIndex RANGE ${FilesLength})
+					list(GET "InterfaceIncludeFiles${FoldersLength}" ${FileIndex} InterfaceIncludeFile)
+					cmake_path(RELATIVE_PATH InterfaceIncludeFile
+						BASE_DIRECTORY ${InterfaceIncludeFolder}
+						OUTPUT_VARIABLE InterfaceIncludeFileRelativePath)
+					cmake_path(APPEND TARGET_NAME CMAKE_INSTALL_INCLUDEDIR InterfaceIncludeFileRelativePath OUTPUT_VARIABLE InterfaceIncludeFileInstallPath])
+					target_sources(${TARGET_NAME}
+						INTERFACE
+						FILE_SET HEADERS
+						BASE_DIRS ${InterfaceIncludeFolder}
+						FILES
+						$<BUILD_INTERFACE:${InterfaceIncludeFile}>
+						$<INSTALL_INTERFACE:${InterfaceIncludeFileInstallPath}>
+					)
+				endforeach()
+			endif()
+		endforeach()
+	endif()
 endmacro(AddTargetInclude)
+
+macro(AddTargetInstall TARGET_NAME TARGET_NAMESPACE)
+	get_target_property(target_type ${TARGET_NAME} TYPE)
+
+	if(NOT target_type STREQUAL "EXECUTABLE")
+		add_library("${TARGET_NAMESPACE}::${TARGET_NAME}" ALIAS ${TARGET_NAME})
+	endif()
+
+	install(TARGETS ${TARGET_NAME}
+		EXPORT ${TARGET_NAME}Targets
+		LIBRARY DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
+		RUNTIME DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_BINDIR}
+		PUBLIC_HEADER DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+		FILE_SET HEADERS
+		DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+	)
+
+	install(EXPORT ${TARGET_NAME}Targets
+		FILE ${TARGET_NAME}Targets.cmake
+		NAMESPACE ${TARGET_NAMESPACE}::
+		DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+	)
+endmacro(AddTargetInstall)
 
 MACRO(ADD_DELAYLOAD_FLAGS flagsVar)
 	SET(dlls "${ARGN}")

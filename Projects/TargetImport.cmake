@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 include(FetchContent)
+include(GNUInstallDirs)
 
 FUNCTION(ImportTarget TargetName)
     set(options STATIC SSH)
@@ -53,86 +54,96 @@ FUNCTION(Importinih)
     FetchContent_GetProperties(inih)
 
     set(SourceFiles "")
-    set(HeaderFiles "")
-
     list(APPEND SourceFiles
         ${inih_SOURCE_DIR}/ini.c
     )
 
-    list(APPEND HeaderFiles
-        ${inih_SOURCE_DIR}/ini.h
-    )
+    function(add_inih TARGET_NAME)
+        target_sources(
+            ${TARGET_NAME}
+            PRIVATE
+            ${SourceFiles}
+            PUBLIC
+            FILE_SET HEADERS
+            BASE_DIRS ${inih_SOURCE_DIR}
+            FILES
+            $<BUILD_INTERFACE:${inih_SOURCE_DIR}/ini.h>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ini.h>
+        )
+        install(TARGETS ${TARGET_NAME}
+            EXPORT ${TARGET_NAME}Targets
+            LIBRARY DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_BINDIR}
+            PUBLIC_HEADER DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+            FILE_SET HEADERS
+            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+        )
+
+        install(EXPORT ${TARGET_NAME}Targets
+            FILE ${TARGET_NAME}Targets.cmake
+            NAMESPACE inih::
+            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+        )
+    endfunction()
 
     add_library(${TARGET_NAME} SHARED)
-    target_sources(
-        ${TARGET_NAME}
-        PRIVATE
-        ${SourceFiles}
-        PUBLIC
-        ${HeaderFiles}
-    )
-    target_include_directories(${TARGET_NAME} PUBLIC
-        $<BUILD_INTERFACE:${inih_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
-    )
     target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
     target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
+    add_inih(${TARGET_NAME})
 
     set(TARGET_NAME ${TARGET_NAME}_a)
     add_library(${TARGET_NAME} STATIC)
-    target_sources(
-        ${TARGET_NAME}
-        PRIVATE
-        ${SourceFiles}
-        PUBLIC
-        ${HeaderFiles}
-    )
-    target_include_directories(${TARGET_NAME} PUBLIC
-        $<BUILD_INTERFACE:${inih_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
-    )
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
+    add_inih(${TARGET_NAME})
 
     list(APPEND SourceFiles
         ${inih_SOURCE_DIR}/cpp/INIReader.cpp
     )
 
-    list(APPEND HeaderFiles
-        ${inih_SOURCE_DIR}/cpp/INIReader.h
-    )
+    function(add_inihpp TARGET_NAME)
+        target_sources(
+            ${TARGET_NAME}
+            PRIVATE
+            ${SourceFiles}
+            PUBLIC
+            FILE_SET HEADERS
+            BASE_DIRS ${inih_SOURCE_DIR}
+            FILES
+            $<BUILD_INTERFACE:${inih_SOURCE_DIR}/ini.h>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ini.h>
+            $<BUILD_INTERFACE:${inih_SOURCE_DIR}/cpp/INIReader.h>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cpp/INIReader.h>
+        )
+        install(TARGETS ${TARGET_NAME}
+            EXPORT ${TARGET_NAME}Targets
+            LIBRARY DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_BINDIR}
+            PUBLIC_HEADER DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+            FILE_SET HEADERS
+            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+        )
+
+        install(EXPORT ${TARGET_NAME}Targets
+            FILE ${TARGET_NAME}Targets.cmake
+            NAMESPACE inih::
+            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+        )
+    endfunction()
 
     set(TARGET_NAME inihpp)
     add_library(${TARGET_NAME} SHARED)
-    target_sources(
-        ${TARGET_NAME}
-        PRIVATE
-        ${SourceFiles}
-        PUBLIC
-        ${HeaderFiles}
-    )
-    target_include_directories(${TARGET_NAME} PUBLIC
-        $<BUILD_INTERFACE:${inih_SOURCE_DIR}/cpp>
-        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
-    )
     target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
     target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
+    add_inihpp(${TARGET_NAME})
 
     set(TARGET_NAME ${TARGET_NAME}_a)
     add_library(${TARGET_NAME} STATIC)
-    target_sources(
-        ${TARGET_NAME}
-        PRIVATE
-        ${SourceFiles}
-        PUBLIC
-        ${HeaderFiles}
-    )
-    target_include_directories(${TARGET_NAME} PUBLIC
-        $<BUILD_INTERFACE:${inih_SOURCE_DIR}/cpp>
-        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
-    )
+    add_inihpp(${TARGET_NAME})
 ENDFUNCTION(Importinih)
 
 FUNCTION(Importimgui)
@@ -234,7 +245,7 @@ FUNCTION(Importimgui)
     TARGET_INCLUDE_DIRECTORIES(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${imgui_SOURCE_DIR}/backends>
         $<BUILD_INTERFACE:${imgui_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${TARGET_NAME}>
     )
 
     if(SDL2_FOUND)
@@ -312,7 +323,7 @@ FUNCTION(Importmpack)
     )
     target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${mpack_SOURCE_DIR}/src>
-        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${TARGET_NAME}>
     )
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
@@ -328,7 +339,7 @@ FUNCTION(Importmpack)
     )
     target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${mpack_SOURCE_DIR}/src>
-        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${TARGET_NAME}>
     )
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
@@ -361,36 +372,24 @@ FUNCTION(Importrollinghashcpp)
     FetchContent_GetProperties(rollinghashcpp_git)
 
     NewTargetSource()
-    AddSourceFolder(INCLUDE RECURSE INTERFACE "${rollinghashcpp_git_SOURCE_DIR}/include")
+    AddSourceFolder(RECURSE INTERFACE "${rollinghashcpp_git_SOURCE_DIR}/include")
     source_group(TREE ${rollinghashcpp_git_SOURCE_DIR} FILES ${SourceFiles})
 
     add_library(${TARGET_NAME} INTERFACE ${SourceFiles})
 
     AddTargetInclude(${TARGET_NAME})
-
-    install(TARGETS ${TARGET_NAME}
-        EXPORT ${TARGET_NAME}Targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        PUBLIC_HEADER DESTINATION include
-    )
-
-    install(EXPORT ${TARGET_NAME}Targets
-        FILE ${TARGET_NAME}Targets.cmake
-        NAMESPACE rollinghashcpp::
-        DESTINATION lib/cmake/${TARGET_NAME}
-    )
+    AddTargetInstall(${TARGET_NAME} rollinghashcpp)
 ENDFUNCTION(Importrollinghashcpp)
 
 FUNCTION(Importbetterenums)
     set(TARGET_NAME better-enums)
+
     if(TARGET ${TARGET_NAME})
         return()
     endif()
 
     if(NOT IMPORT_PROJECT_TAG)
-        set(IMPORT_PROJECT_TAG "520d8ee39037c9c94aa6e708a4fd6c0fa313ae80") 
+        set(IMPORT_PROJECT_TAG "520d8ee39037c9c94aa6e708a4fd6c0fa313ae80")
         message(SEND_ERROR "missing PROJECT_TAG")
     endif()
 
@@ -423,7 +422,7 @@ FUNCTION(Importbetterenums)
     )
     target_include_directories(${TARGET_NAME} PUBLIC
         $<BUILD_INTERFACE:${${TARGET_NAME}_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include/${TARGET_NAME}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${TARGET_NAME}>
     )
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
