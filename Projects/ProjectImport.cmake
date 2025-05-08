@@ -120,6 +120,8 @@ FUNCTION(ImportProject ProjectName)
             ImportFOLLY()
         elseif(ProjectName STREQUAL "TBB")
             ImportTBB()
+        elseif(ProjectName STREQUAL "minizip")
+            ImportMINIZIP()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -770,3 +772,66 @@ FUNCTION(ImportTBB)
 
     AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportTBB)
+
+FUNCTION(ImportMINIZIP)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(IMPORT_PROJECT_TAG)
+        set(MINIZIP_TAG ${IMPORT_PROJECT_TAG})
+    else()
+        set(MINIZIP_TAG "f3ed731e27a97e30dffe076ed5e0537daae5c1bd") # 4.0.10
+        message(SEND_ERROR "missing ZLIB tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:zlib-ng/minizip-ng.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/zlib-ng/minizip-ng.git")
+    endif()
+
+    find_package(ZLIB)
+
+    if(ZLIB_FOUND)
+        set(MZ_ZLIB ON)
+    else()
+        set(MZ_ZLIB OFF)
+    endif()
+
+    find_package(zstd)
+
+    if(zstd_FOUND)
+        set(MZ_ZSTD ON)
+    else()
+        set(MZ_ZSTD OFF)
+    endif()
+
+    find_package(BZip2)
+
+    if(BZip2_FOUND)
+        set(MZ_BZIP2 ON)
+    else()
+        set(MZ_BZIP2 OFF)
+    endif()
+
+    find_package(LibLZMA)
+
+    if(LibLZMA_FOUND)
+        set(MZ_LZMA ON)
+    else()
+        set(MZ_LZMA OFF)
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportMINIZIP)
