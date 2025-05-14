@@ -122,6 +122,10 @@ FUNCTION(ImportProject ProjectName)
             ImportTBB()
         elseif(ProjectName STREQUAL "minizip")
             ImportMINIZIP()
+        elseif(ProjectName STREQUAL "Steam")
+            ImportSTEAM()
+        elseif(ProjectName STREQUAL "cpuid")
+            ImportCPUID()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -835,3 +839,51 @@ FUNCTION(ImportMINIZIP)
 
     AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportMINIZIP)
+
+FUNCTION(ImportSTEAM)
+    FetchContent_Declare(download_steam
+        URL ${IMPORT_PROJECT_URL}
+        DOWNLOAD_NO_EXTRACT false
+        DOWNLOAD_EXTRACT_TIMESTAMP false
+    )
+    FetchContent_MakeAvailable(download_steam)
+    FetchContent_GetProperties(download_steam
+        SOURCE_DIR download_steam_SOURCE_DIR
+    )
+    set(${ProjectName}_INSTALL_DIR ${download_steam_SOURCE_DIR})
+    set(${ProjectName}_ROOT ${${ProjectName}_INSTALL_DIR} CACHE STRING "steam root dir")
+
+    if(IMPORT_PROJECT_FIND)
+        find_package(${ProjectName} REQUIRED)
+    else()
+        find_package(${ProjectName})
+    endif()
+ENDFUNCTION(ImportSTEAM)
+
+FUNCTION(ImportCPUID)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing project tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:anrieff/libcpuid.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/anrieff/libcpuid.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportCPUID)
