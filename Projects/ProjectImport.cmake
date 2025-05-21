@@ -126,6 +126,8 @@ FUNCTION(ImportProject ProjectName)
             ImportSTEAM()
         elseif(ProjectName STREQUAL "cpuid")
             ImportCPUID()
+        elseif(ProjectName STREQUAL "Protobuf")
+            ImportProtobuf()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -887,3 +889,32 @@ FUNCTION(ImportCPUID)
 
     AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportCPUID)
+
+
+FUNCTION(ImportProtobuf)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing project tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:protocolbuffers/protobuf.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/protocolbuffers/protobuf.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportProtobuf)
