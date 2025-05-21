@@ -22,6 +22,8 @@ FUNCTION(ImportTarget TargetName)
         Importrapidjson()
     elseif(TargetName STREQUAL "better-enums")
         Importbetterenums()
+    elseif(TargetName STREQUAL "ValveFileVDF")
+        ImportValveFileVDF()
     else()
         message(STATUS "no target ${TargetName} to import")
     endif()
@@ -427,3 +429,35 @@ FUNCTION(Importbetterenums)
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
 ENDFUNCTION(Importbetterenums)
+
+FUNCTION(ImportValveFileVDF)
+    set(TARGET_NAME ValveFileVDF)
+
+    if(TARGET ${TARGET_NAME})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing PROJECT_TAG")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:TinyTinni/ValveFileVDF.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/TinyTinni/ValveFileVDF.git")
+    endif()
+
+    string(TOLOWER "${TARGET_NAME}_git" TargetGitName)
+    FetchContent_Declare(
+        ${TargetGitName}
+        GIT_REPOSITORY ${GIT_REPOSITORY}
+        GIT_TAG ${IMPORT_PROJECT_TAG}
+    )
+    FetchContent_Populate(${TargetGitName})
+    FetchContent_GetProperties(${TargetGitName})
+    NewTargetSource()
+    AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
+    add_library(${TARGET_NAME} INTERFACE)
+    AddTargetInclude(${TARGET_NAME})
+    AddTargetInstall(${TARGET_NAME} ${TARGET_NAME})
+ENDFUNCTION(ImportValveFileVDF)
