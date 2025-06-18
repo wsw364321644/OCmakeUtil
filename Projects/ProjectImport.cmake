@@ -1,17 +1,29 @@
 cmake_minimum_required(VERSION 3.24)
 set(OCMAKEUTIL_PROJECTS_PATH ${CMAKE_CURRENT_FUNCTION_LIST_DIR})
 
-FUNCTION(AddPathAndFind ProjectName Path)
-    if(IMPORT_PROJECT_FIND)
-        list(APPEND CMAKE_PREFIX_PATH ${Path})
-        find_package(${ProjectName} REQUIRED)
-        set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
-    endif()
-ENDFUNCTION(AddPathAndFind)
-
 FUNCTION(FindInPath ProjectName Path)
+    set(options CONFIG REQUIRED)
+    set(oneValueArgs)
+    set(multiValueArgs)
+
+    cmake_parse_arguments(FindInPath "${options}" "${oneValueArgs}"
+        "${multiValueArgs}" ${ARGN})
+
     list(APPEND CMAKE_PREFIX_PATH ${Path})
-    find_package(${ProjectName})
+
+    if(FindInPath_CONFIG)
+        set(config_parameter CONFIG)
+    else()
+        set(config_parameter)
+    endif()
+
+    if(FindInPath_REQUIRED)
+        set(required_parameter REQUIRED)
+    else()
+        set(required_parameter)
+    endif()
+
+    find_package(${ProjectName} ${config_parameter} ${required_parameter})
 
     if(${ProjectName}_FOUND)
         set(FindInPath_FOUND TRUE PARENT_SCOPE)
@@ -19,6 +31,11 @@ FUNCTION(FindInPath ProjectName Path)
         set(FindInPath_FOUND FALSE PARENT_SCOPE)
     endif()
 ENDFUNCTION(FindInPath)
+
+FUNCTION(AddPathToPrefix Path)
+    list(APPEND CMAKE_PREFIX_PATH ${Path})
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
+ENDFUNCTION(AddPathToPrefix)
 
 FUNCTION(PostImportProject)
     find_package(${ProjectName})
@@ -85,7 +102,11 @@ FUNCTION(ImportProject ProjectName)
         endif()
     endif()
 
-    find_package(${ProjectName})
+    find_package(${ProjectName} CONFIG)
+
+    if(NOT ${ProjectName}_FOUND)
+        find_package(${ProjectName})
+    endif()
 
     if(NOT ${ProjectName}_FOUND)
         if(ProjectName STREQUAL "ZLIB")
@@ -128,6 +149,10 @@ FUNCTION(ImportProject ProjectName)
             ImportCPUID()
         elseif(ProjectName STREQUAL "Protobuf")
             ImportProtobuf()
+        elseif(ProjectName STREQUAL "libwebsockets")
+            ImportLIBWEBSOCKETS()
+        elseif(ProjectName STREQUAL "absl")
+            ImportABSL()
         else()
             message(STATUS "no project ${ProjectName} to import")
         endif()
@@ -151,7 +176,7 @@ FUNCTION(ImportZLIB)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -182,7 +207,8 @@ FUNCTION(ImportZLIB)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportZLIB)
 
 FUNCTION(ImportCURL)
@@ -190,7 +216,7 @@ FUNCTION(ImportCURL)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -225,7 +251,8 @@ FUNCTION(ImportCURL)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportCURL)
 
 FUNCTION(ImportSQLITE3)
@@ -233,7 +260,7 @@ FUNCTION(ImportSQLITE3)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -261,7 +288,8 @@ FUNCTION(ImportSQLITE3)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSQLITE3)
 
 FUNCTION(ImportLIBUV)
@@ -269,7 +297,7 @@ FUNCTION(ImportLIBUV)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -300,7 +328,8 @@ FUNCTION(ImportLIBUV)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportLIBUV)
 
 FUNCTION(ImportDETOURS)
@@ -308,7 +337,7 @@ FUNCTION(ImportDETOURS)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -331,7 +360,8 @@ FUNCTION(ImportDETOURS)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportDETOURS)
 
 FUNCTION(ImportSDL2)
@@ -339,7 +369,7 @@ FUNCTION(ImportSDL2)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -374,7 +404,8 @@ FUNCTION(ImportSDL2)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSDL2)
 
 FUNCTION(ImportMbedTLS)
@@ -382,7 +413,7 @@ FUNCTION(ImportMbedTLS)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -417,7 +448,8 @@ FUNCTION(ImportMbedTLS)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportMbedTLS)
 
 FUNCTION(ImportGLEW)
@@ -425,7 +457,7 @@ FUNCTION(ImportGLEW)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -453,7 +485,8 @@ FUNCTION(ImportGLEW)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportGLEW)
 
 FUNCTION(ImportRAPIDFUZZ)
@@ -461,7 +494,7 @@ FUNCTION(ImportRAPIDFUZZ)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -489,7 +522,8 @@ FUNCTION(ImportRAPIDFUZZ)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportRAPIDFUZZ)
 
 FUNCTION(ImportxxHash)
@@ -497,7 +531,7 @@ FUNCTION(ImportxxHash)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -531,7 +565,8 @@ FUNCTION(ImportxxHash)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportxxHash)
 
 FUNCTION(ImportZSTD)
@@ -539,7 +574,7 @@ FUNCTION(ImportZSTD)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -567,7 +602,8 @@ FUNCTION(ImportZSTD)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportZSTD)
 
 FUNCTION(ImportBOOST)
@@ -575,7 +611,7 @@ FUNCTION(ImportBOOST)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -605,7 +641,8 @@ FUNCTION(ImportBOOST)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportBOOST)
 
 FUNCTION(ImportOPENSSL)
@@ -613,7 +650,7 @@ FUNCTION(ImportOPENSSL)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -656,7 +693,8 @@ FUNCTION(ImportOPENSSL)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportOPENSSL)
 
 FUNCTION(ImportQINIU)
@@ -664,7 +702,7 @@ FUNCTION(ImportQINIU)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -690,7 +728,8 @@ FUNCTION(ImportQINIU)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportQINIU)
 
 FUNCTION(ImportFOLLY)
@@ -698,7 +737,7 @@ FUNCTION(ImportFOLLY)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -733,7 +772,8 @@ FUNCTION(ImportFOLLY)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportFOLLY)
 
 FUNCTION(ImportTBB)
@@ -741,7 +781,7 @@ FUNCTION(ImportTBB)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -776,7 +816,8 @@ FUNCTION(ImportTBB)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportTBB)
 
 FUNCTION(ImportMINIZIP)
@@ -784,7 +825,7 @@ FUNCTION(ImportMINIZIP)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -839,7 +880,8 @@ FUNCTION(ImportMINIZIP)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportMINIZIP)
 
 FUNCTION(ImportSTEAM)
@@ -867,7 +909,7 @@ FUNCTION(ImportCPUID)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
 
@@ -887,18 +929,20 @@ FUNCTION(ImportCPUID)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportCPUID)
-
 
 FUNCTION(ImportProtobuf)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG)
 
     if(FindInPath_FOUND)
-        AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
     endif()
+
+    find_package(absl CONFIG REQUIRED)
 
     if(NOT IMPORT_PROJECT_TAG)
         message(SEND_ERROR "missing project tag")
@@ -916,5 +960,65 @@ FUNCTION(ImportProtobuf)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    AddPathAndFind(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportProtobuf)
+
+FUNCTION(ImportLIBWEBSOCKETS)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing project tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:warmcat/libwebsockets.git")
+    else()
+        set(GIT_REPOSITORY "https://libwebsockets.org/repo/libwebsockets
+")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportLIBWEBSOCKETS)
+
+FUNCTION(ImportABSL)
+    set(PROJECT_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${PROJECT_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${PROJECT_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing project tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:abseil/abseil-cpp.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/abseil/abseil-cpp.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --install . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${PROJECT_INSTALL_DIR})
+ENDFUNCTION(ImportABSL)
