@@ -1,4 +1,5 @@
 echo on
+set CMAKE_SIZEOF_VOID_P=@CMAKE_SIZEOF_VOID_P@
 set OPENSSL_INSTALL_PATH=@OPENSSL_INSTALL_PATH@
 set VCVAR_PATH=@VCVAR_PATH@
 set NASM_PATH=@NASM_PATH@
@@ -14,20 +15,24 @@ set PATH=%STRAWBERRY_PERL_PATH%/c/bin;%PATH%
 
 call "%VCVAR_PATH%"
 
-if %IMPORT_PROJECT_STATIC_CRT%=="TRUE" (
-    if defined ZLIB_INCLUDE_DIR  (
-        perl Configure VC-WIN64A --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl -static no-pic no-shared no-threads --with-zlib-lib=%ZLIB_LIBRARY_DIR% --with-zlib-include=%ZLIB_INCLUDE_DIR%
-    ) else (
-        perl Configure VC-WIN64A --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl -static no-pic no-shared no-threads
-    )
+set OPENSSL_CONFIGURE_PARAMA=
+if %CMAKE_SIZEOF_VOID_P% EQU 8 (
+    set OPENSSL_CONFIGURE_PARAMA=%OPENSSL_CONFIGURE_PARAMA% VC-WIN64A
 ) else (
-        if defined ZLIB_INCLUDE_DIR  (
-        perl Configure VC-WIN64A --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl --with-zlib-lib=%ZLIB_LIBRARY_DIR% --with-zlib-include=%ZLIB_INCLUDE_DIR%
-    ) else (
-        perl Configure VC-WIN64A --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl
-    )
+    set OPENSSL_CONFIGURE_PARAMA=%OPENSSL_CONFIGURE_PARAMA% VC-WIN32
 )
-::perl Configure VC-WIN64A  --prefix=%PROJECT_PATH%\%PROJECT%\out --openssldir=%PROJECT_PATH%\%PROJECT%\sslout  no-asm
+
+set OPENSSL_CONFIGURE_PARAMA=%OPENSSL_CONFIGURE_PARAMA% --prefix=%OPENSSL_INSTALL_PATH% --openssldir=%OPENSSL_INSTALL_PATH%\ssl
+
+if %IMPORT_PROJECT_STATIC_CRT% == "TRUE" (
+    set OPENSSL_CONFIGURE_PARAMA=%OPENSSL_CONFIGURE_PARAMA% -static no-pic no-shared no-threads
+) 
+
+if defined ZLIB_INCLUDE_DIR  (
+    set OPENSSL_CONFIGURE_PARAMA=%OPENSSL_CONFIGURE_PARAMA% --with-zlib-lib=%ZLIB_LIBRARY_DIR% --with-zlib-include=%ZLIB_INCLUDE_DIR%
+) 
+
+perl Configure %OPENSSL_CONFIGURE_PARAMA%
 :: 编译
 nmake -f makefile
 :: 测试(可选)

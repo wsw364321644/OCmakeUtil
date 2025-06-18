@@ -30,7 +30,27 @@ FUNCTION(EXCLUDE_FILES_FROM_DIR_IN_LIST _InFileList _excludeDirName)
     set(EXCLUDED_FILES ${_InFileList} PARENT_SCOPE) # Return the SOURCE_FILES variable to the calling parent
 ENDFUNCTION(EXCLUDE_FILES_FROM_DIR_IN_LIST)
 
-macro(SearchSourceFiles FolderPath IsRecurse)
+macro(ExcludeFile FileListVar)
+    if(WIN32)
+        EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "Linux")
+        EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "linux")
+    elseif(UNIX)
+        EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "Windows")
+        EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "windows")
+    endif()
+
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X86")
+        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x86")
+    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X64")
+        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x64")
+    endif()
+
+    set(${FileListVar} ${EXCLUDED_FILES})
+endmacro(ExcludeFile)
+
+macro(SearchSourceFiles FolderPath bRecurse)
     set(temppath ${FolderPath})
     cmake_path(APPEND temppath "*.h" OUTPUT_VARIABLE TmpHHeader)
     cmake_path(APPEND temppath "*.hpp" OUTPUT_VARIABLE TmpHppHeader)
@@ -48,45 +68,25 @@ macro(SearchSourceFiles FolderPath IsRecurse)
     cmake_path(APPEND temppath "*.resx" OUTPUT_VARIABLE TmpRESX)
     cmake_path(APPEND temppath "*.settings" OUTPUT_VARIABLE TmpSettings)
 
-    if(${IsRecurse})
-        file(GLOB_RECURSE TmpSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpHHeader} ${TmpHppHeader} ${TmpC} ${TmpCC} ${TmpCpp} ${TmpIcon} ${TmpRC})
+    if(${bRecurse})
+        set(SearchParam_RECURSE GLOB_RECURSE)
     else()
-        file(GLOB TmpSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpHHeader} ${TmpHppHeader} ${TmpC} ${TmpCC} ${TmpCpp} ${TmpIcon} ${TmpRC})
+        set(SearchParam_RECURSE GLOB)
     endif()
 
-    if(${IsRecurse})
-        file(GLOB_RECURSE TmpAsmSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpS} ${TmpAsm})
-    else()
-        file(GLOB TmpAsmSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpS} ${TmpAsm})
-    endif()
-
+    file(${SearchParam_RECURSE} TmpHeader LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpHHeader} ${TmpHppHeader})
+    file(${SearchParam_RECURSE} TmpSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpC} ${TmpCC} ${TmpCpp} ${TmpIcon} ${TmpRC})
+    file(${SearchParam_RECURSE} TmpAsmSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpS} ${TmpAsm})
+    ExcludeFile(TmpAsmSource)
+    ExcludeFile(TmpHeader)
+    ExcludeFile(TmpSource)
     set_property(SOURCE TmpAsmSource APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp")
-
     list(APPEND TmpSource ${TmpAsmSource})
-
-    if(WIN32)
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${TmpSource}" "Linux")
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${TmpSource}" "linux")
-
-    # message(STATUS "EXCLUDED_FILES ${EXCLUDED_FILES}")
-    elseif(UNIX)
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${TmpSource}" "Windows")
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${TmpSource}" "windows")
-    endif()
-
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X86")
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x86")
-    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X64")
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x64")
-    endif()
 
     # message(STATUS "EXCLUDED_FILES ${EXCLUDED_FILES}")
     # if(NOT EXCLUDED_FILES STREQUAL "")
     # set(SourceFiles "${SourceFiles};${EXCLUDED_FILES}")
     # endif()
-    list(APPEND SourceFiles ${EXCLUDED_FILES})
 endmacro(SearchSourceFiles)
 
 macro(AddSourceFolder)
@@ -100,56 +100,75 @@ macro(AddSourceFolder)
         # list(LENGTH PrivateIncludeFolders FoldersLength)
         list(APPEND PrivateIncludeFolders ${SourceFolder})
         SearchSourceFiles(${SourceFolder} ${AddSourceFolder_RECURSE})
-        list(APPEND PrivateIncludeFiles ${EXCLUDED_FILES})
+        list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+        list(APPEND PrivateFiles ${TmpHeader})
 
-        # set("PrivateIncludeFiles${FoldersLength}" "")
-        # list(APPEND "PrivateIncludeFiles${FoldersLength}" ${EXCLUDED_FILES})
+        # set("PrivateFiles${FoldersLength}" "")
+        # list(APPEND "PrivateFiles${FoldersLength}" ${TmpHeader} ${TmpSource})
     endforeach()
 
     foreach(SourceFolder ${AddSourceFolder_UNPARSED_ARGUMENTS})
         # list(LENGTH PrivateIncludeFolders FoldersLength)
         list(APPEND PrivateIncludeFolders ${SourceFolder})
         SearchSourceFiles(${SourceFolder} ${AddSourceFolder_RECURSE})
-        list(APPEND PrivateIncludeFiles ${EXCLUDED_FILES})
+        list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+        list(APPEND PrivateFiles ${TmpHeader} ${TmpSource})
 
-        # set("PrivateIncludeFiles${FoldersLength}" "")
-        # list(APPEND "PrivateIncludeFiles${FoldersLength}" ${EXCLUDED_FILES})
+        # set("PrivateFiles${FoldersLength}" "")
+        # list(APPEND "PrivateFiles${FoldersLength}" ${TmpHeader} ${TmpSource})
     endforeach()
 
     foreach(SourceFolder ${AddSourceFolder_PUBLIC})
         # list(LENGTH PublicIncludeFolders FoldersLength)
         list(APPEND PublicIncludeFolders ${SourceFolder})
         SearchSourceFiles(${SourceFolder} ${AddSourceFolder_RECURSE})
+        list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
 
-        foreach(FILE ${EXCLUDED_FILES})
-            cmake_path(RELATIVE_PATH FILE
+        if(AddSourceFolder_INCLUDE)
+            list(APPEND SourceFiles ${TmpHeader})
+        else()
+            list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+            list(APPEND PrivateFiles ${TmpSource})
+        endif()
+
+        foreach(FILE ${TmpHeader})
+            cmake_path(
+                RELATIVE_PATH FILE
                 BASE_DIRECTORY ${SourceFolder}
-                OUTPUT_VARIABLE IncludeFileRelativePath)
-            cmake_path(APPEND TARGET_NAME CMAKE_INSTALL_INCLUDEDIR IncludeFileRelativePath OUTPUT_VARIABLE IncludeFileInstallPath])
+                OUTPUT_VARIABLE IncludeFileRelativePath
+            )
+            cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
             list(APPEND PublicIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
             list(APPEND PublicIncludeFiles "$<INSTALL_INTERFACE:${IncludeFileInstallPath}>")
         endforeach()
 
         # set("PublicIncludeFiles${FoldersLength}" "")
-        # list(APPEND "PublicIncludeFiles${FoldersLength}" ${EXCLUDED_FILES})
+        # list(APPEND "PublicIncludeFiles${FoldersLength}" ${TmpHeader})
     endforeach()
 
     foreach(SourceFolder ${AddSourceFolder_INTERFACE})
         # list(LENGTH InterfaceIncludeFolders FoldersLength)
         list(APPEND InterfaceIncludeFolders ${SourceFolder})
-        SearchSourceFiles(${SourceFolder} ${AddSourceFolder_RECURSE})
+        SearchSourceFiles(${SourceFolder} ${AddSourceFolder_RECURSE} TRUE)
 
-        foreach(FILE ${EXCLUDED_FILES})
+        if(AddSourceFolder_INCLUDE)
+            list(APPEND SourceFiles ${TmpHeader})
+        else()
+            list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+            list(APPEND PrivateFiles ${TmpSource})
+        endif()
+
+        foreach(FILE ${TmpHeader})
             cmake_path(RELATIVE_PATH FILE
                 BASE_DIRECTORY ${SourceFolder}
                 OUTPUT_VARIABLE IncludeFileRelativePath)
-            cmake_path(APPEND TARGET_NAME CMAKE_INSTALL_INCLUDEDIR IncludeFileRelativePath OUTPUT_VARIABLE IncludeFileInstallPath])
+            cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
             list(APPEND InterfaceIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
             list(APPEND InterfaceIncludeFiles "$<INSTALL_INTERFACE:${IncludeFileInstallPath}>")
         endforeach()
 
         # set("InterfaceIncludeFiles${FoldersLength}" "")
-        # list(APPEND "InterfaceIncludeFiles${FoldersLength}" ${EXCLUDED_FILES})
+        # list(APPEND "InterfaceIncludeFiles${FoldersLength}" ${TmpHeader})
     endforeach()
 endmacro(AddSourceFolder)
 
@@ -159,7 +178,7 @@ macro(NewTargetSource)
     set(PublicIncludeFolders "")
     set(InterfaceIncludeFolders "")
 
-    set(PrivateIncludeFiles "")
+    set(PrivateFiles "")
     set(PublicIncludeFiles "")
     set(InterfaceIncludeFiles "")
 endmacro(NewTargetSource)
@@ -172,14 +191,14 @@ macro(AddTargetInclude TARGET_NAME)
 
     # foreach(FolderIndex RANGE ${FoldersLength})
     # list(GET PrivateIncludeFolders ${FolderIndex} PrivateIncludeFolder)
-    # list(LENGTH "PrivateIncludeFiles${FoldersLength}" FilesLength)
+    # list(LENGTH "PrivateFiles${FoldersLength}" FilesLength)
 
     # if(${FilesLength} GREATER 0)
     # target_include_directories(${TARGET_NAME}
     # PRIVATE ${PrivateIncludeFolder})
     # target_sources(${TARGET_NAME}
     # PRIVATE
-    # ${PrivateIncludeFiles${FoldersLength}}
+    # ${PrivateFiles${FoldersLength}}
     # )
     # endif()
     # endforeach()
@@ -246,7 +265,7 @@ macro(AddTargetInclude TARGET_NAME)
     # endif()
     # endforeach()
     # endif()
-    list(LENGTH PrivateIncludeFiles FilesLength)
+    list(LENGTH PrivateFiles FilesLength)
 
     if(${FilesLength} GREATER 0)
         target_include_directories(${TARGET_NAME}
@@ -254,31 +273,33 @@ macro(AddTargetInclude TARGET_NAME)
         )
         target_sources(${TARGET_NAME}
             PRIVATE
-            ${PrivateIncludeFiles}
+            ${PrivateFiles}
         )
     endif()
 
     list(LENGTH PublicIncludeFiles FilesLength)
 
     if(${FilesLength} GREATER 0)
+        string(REPLACE "@TARGET_NAME_TOKEN@" ${TARGET_NAME} FinalFiles "${PublicIncludeFiles}")
         target_sources(${TARGET_NAME}
             PUBLIC
             FILE_SET HEADERS
             BASE_DIRS ${PublicIncludeFolders}
             FILES
-            ${PublicIncludeFiles}
+            ${FinalFiles}
         )
     endif()
 
     list(LENGTH InterfaceIncludeFiles FilesLength)
 
     if(${FilesLength} GREATER 0)
+        string(REPLACE "@TARGET_NAME_TOKEN@" ${TARGET_NAME} FinalFiles "${InterfaceIncludeFiles}")
         target_sources(${TARGET_NAME}
             PUBLIC
             FILE_SET HEADERS
             BASE_DIRS ${InterfaceIncludeFolders}
             FILES
-            ${InterfaceIncludeFiles}
+            ${FinalFiles}
         )
     endif()
 endmacro(AddTargetInclude)

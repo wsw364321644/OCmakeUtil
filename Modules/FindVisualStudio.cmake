@@ -133,7 +133,13 @@ function(FindVisualStudio)
     DOC "Windows SDK")
 
   set(windows.sdk.host "Host${CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE}")
-  set(windows.sdk.target "${CMAKE_VS_PLATFORM_NAME}")
+
+  if(${CMAKE_VS_PLATFORM_NAME} MATCHES "x64")
+    set(windows.sdk.target "x64")
+  else()
+    set(windows.sdk.target "x86")
+  endif()
+
   set(msvc.tools.dir "${IZ_MSVS_INSTALL_PATH}/VC/Tools/MSVC/${IZ_MSVS_TOOLS_VERSION}")
 
   block(SCOPE_FOR VARIABLES)
