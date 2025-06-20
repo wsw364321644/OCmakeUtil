@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.24)
-set(OCMAKEUTIL_PROJECTS_PATH ${CMAKE_CURRENT_FUNCTION_LIST_DIR})
 
 FUNCTION(FindInPath ProjectName Path)
     set(options CONFIG REQUIRED)
@@ -88,6 +87,7 @@ FUNCTION(ImportProject ProjectName)
         set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
     else()
         set(WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/../external/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
+        cmake_path(NORMAL_PATH WORKING_DIRECTORY)
     endif()
 
     list(APPEND CMAKE_GENERATOR_ARGV "-G")
@@ -725,7 +725,7 @@ FUNCTION(ImportQINIU)
 
     find_package(CURL REQUIRED)
     find_package(OpenSSL REQUIRED)
-
+    set(OCMAKEUTIL_PROJECTS_PATH ${CMAKE_CURRENT_FUNCTION_LIST_DIR})
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
 
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
