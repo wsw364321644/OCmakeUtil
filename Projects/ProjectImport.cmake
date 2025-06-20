@@ -56,7 +56,7 @@ ENDFUNCTION(PostImportProject)
 
 FUNCTION(ImportProject ProjectName)
     set(options STATIC_CRT STATIC SSH FIND)
-    set(oneValueArgs URL TAG BIT)
+    set(oneValueArgs URL TAG BIT EXTERNAL_DIR)
     set(multiValueArgs)
 
     cmake_parse_arguments(IMPORT_PROJECT "${options}" "${oneValueArgs}"
@@ -83,7 +83,12 @@ FUNCTION(ImportProject ProjectName)
     endif()
 
     string(TOLOWER ${ProjectName} ProjectName_Lower)
-    set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
+
+    if(IMPORT_PROJECT_EXTERNAL_DIR)
+        set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
+    else()
+        set(WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/../external/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
+    endif()
 
     list(APPEND CMAKE_GENERATOR_ARGV "-G")
     list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR}")
