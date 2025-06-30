@@ -18,6 +18,8 @@ FUNCTION(ResourceDownload ResourceName)
             ${ResourceName}
             GIT_REPOSITORY ${INPUT_GIT_REPOSITORY}
             GIT_TAG ${INPUT_GIT_TAG}
+            GIT_SUBMODULES ""
+            GIT_SHALLOW TRUE
         )
         FetchContent_Populate(${ResourceName})
 
