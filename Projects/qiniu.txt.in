@@ -83,7 +83,7 @@ function(update_lib TARGET_NAME)
   )
 
   configure_package_config_file(
-    ${OCMAKEUTIL_PROJECTS_PATH}/qiniuConfig.cmake.in
+    ${OCMAKEUTIL_PROJECTS_PATH}/CommonConfig.cmake.in
     ${PROJECT_BINARY_DIR}/${TARGET_NAME}Config.cmake
     INSTALL_DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
   )

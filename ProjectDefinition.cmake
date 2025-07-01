@@ -122,7 +122,6 @@ macro(AddSourceFolder)
         # list(LENGTH PublicIncludeFolders FoldersLength)
         list(APPEND PublicIncludeFolders ${SourceFolder})
         SearchSourceFiles(${SourceFolder} ${AddSourceFolder_RECURSE})
-        list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
 
         if(AddSourceFolder_INCLUDE)
             list(APPEND SourceFiles ${TmpHeader})
@@ -305,6 +304,7 @@ macro(AddTargetInclude TARGET_NAME)
 endmacro(AddTargetInclude)
 
 macro(AddTargetInstall TARGET_NAME TARGET_NAMESPACE)
+    include(CMakePackageConfigHelpers)
     get_target_property(target_type ${TARGET_NAME} TYPE)
 
     if(NOT target_type STREQUAL "EXECUTABLE")
@@ -326,4 +326,25 @@ macro(AddTargetInstall TARGET_NAME TARGET_NAMESPACE)
         NAMESPACE ${TARGET_NAMESPACE}::
         DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
     )
+
+    configure_package_config_file(
+        ${OCMAKEUTIL_PROJECTS_PATH}/CommonConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}Config.cmake
+        INSTALL_DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+    )
+
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}Config.cmake
+        DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+    )
+
+    if(DEFINED ${TARGET_NAME}_VERSION_STRING)
+        write_basic_package_version_file(
+            ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}ConfigVersion.cmake
+            VERSION ${${TARGET_NAME}_VERSION_STRING}
+            COMPATIBILITY AnyNewerVersion)
+
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}ConfigVersion.cmake
+            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+        )
+    endif()
 endmacro(AddTargetInstall)

@@ -50,6 +50,8 @@ FUNCTION(PostImportProject)
             FILES "${qiniu_DIR}/../../../${CMAKE_INSTALL_BINDIR}/qiniu.dll"
             DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
         )
+    elseif(ProjectName STREQUAL "SQLite3")
+        find_package(SQLite3_a CONFIG REQUIRED)
     endif()
 ENDFUNCTION(PostImportProject)
 
@@ -159,7 +161,7 @@ FUNCTION(ImportProject ProjectName)
         elseif(ProjectName STREQUAL "absl")
             ImportABSL()
         else()
-            message(STATUS "no project ${ProjectName} to import")
+            message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
     else()
         message(STATUS "Before Import Find ${ProjectName}")
@@ -262,11 +264,16 @@ ENDFUNCTION(ImportCURL)
 
 FUNCTION(ImportSQLITE3)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR}/${ProjectName} CONFIG)
 
     if(FindInPath_FOUND)
-        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
-        return()
+        FindInPath(${ProjectName}_a ${${ProjectName}_INSTALL_DIR}/${ProjectName}_a CONFIG)
+
+        if(FindInPath_FOUND)
+            AddPathToPrefix(${${ProjectName}_INSTALL_DIR}/${ProjectName})
+            AddPathToPrefix(${${ProjectName}_INSTALL_DIR}/${ProjectName}_a)
+            return()
+        endif()
     endif()
 
     if(IMPORT_PROJECT_STATIC_CRT)
@@ -293,8 +300,10 @@ FUNCTION(ImportSQLITE3)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR}/${ProjectName} CONFIG REQUIRED)
+    FindInPath(${ProjectName}_a ${${ProjectName}_INSTALL_DIR}/${ProjectName}_a CONFIG REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR}/${ProjectName})
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR}/${ProjectName}_a)
 ENDFUNCTION(ImportSQLITE3)
 
 FUNCTION(ImportLIBUV)
@@ -725,7 +734,7 @@ FUNCTION(ImportQINIU)
 
     find_package(CURL REQUIRED)
     find_package(OpenSSL REQUIRED)
-    set(OCMAKEUTIL_PROJECTS_PATH ${CMAKE_CURRENT_FUNCTION_LIST_DIR})
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
 
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .

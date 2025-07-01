@@ -1,18 +1,42 @@
 cmake_minimum_required(VERSION 3.23)
 include(FetchContent)
 
-project(download_sqlite)
 option(SQLITE_STATIC "ENABLE STATIC BUILD." @SQLITE_STATIC@)
+set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
+set(OCMAKEUTIL_PATH @OCMAKEUTIL_PATH@)
+set(OCMAKEUTIL_PROJECTS_PATH @OCMAKEUTIL_PROJECTS_PATH@)
+set(ProjectName_Lower @ProjectName_Lower@)
+set(ProjectName @ProjectName@)
+
+project(download_sqlite)
+include(GNUInstallDirs)
+
+add_subdirectory(${OCMAKEUTIL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/ocmakeutil)
+
+if(IMPORT_PROJECT_STATIC_CRT)
+    if(MSVC)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    endif()
+
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+endif()
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX
+        "${CMAKE_BINARY_DIR}/${ProjectName_Lower}-prefix"
+        CACHE STRING "Directory to install after building" FORCE)
+endif()
 
 set(DEFAULT_URL https://www.sqlite.org/2023/sqlite-amalgamation-3430200.zip)
-
 set(url @SQLITE_AMALGAMATION_URL@)
-# set(hash af02b88cc922e7506c6659737560c0756deee24e4e7741d4b315af341edd8b40)
 
-if(url STREQUAL  "")
-  set(url ${DEFAULT_URL})
+# set(hash af02b88cc922e7506c6659737560c0756deee24e4e7741d4b315af341edd8b40)
+if(url STREQUAL "")
+    set(url ${DEFAULT_URL})
 elseif(NOT url)
-  set(url ${DEFAULT_URL})
+    set(url ${DEFAULT_URL})
 endif()
 
 if(hash)
@@ -35,42 +59,25 @@ FetchContent_GetProperties(download_sqlite
     SOURCE_DIR download_sqlite_SOURCE_DIR
 )
 
-if(MSVC)
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "@CMAKE_MSVC_RUNTIME_LIBRARY@")
-endif()
+NewTargetSource()
+AddSourceFolder(INCLUDE PUBLIC "${download_sqlite_SOURCE_DIR}")
+list(APPEND SourceFiles ${SourceFiles} ${download_sqlite_SOURCE_DIR}/sqlite3.c)
+list(APPEND PrivateFiles ${PrivateFiles} ${download_sqlite_SOURCE_DIR}/sqlite3.c)
 
-set(TARGET_NAME sqlite3)
+function(add_lib TARGET_NAME)
+    AddTargetInclude(${TARGET_NAME})
+    AddTargetInstall(${TARGET_NAME} SQLite3)
+endfunction()
 
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX
-      "${CMAKE_BINARY_DIR}/${TARGET_NAME}-prefix"
-      CACHE STRING "Directory to install after building" FORCE)
-endif()
+set(TARGET_NAME ${ProjectName})
+add_library(${TARGET_NAME} SHARED)
+target_compile_definitions(${TARGET_NAME} PRIVATE "-DSQLITE_API=__declspec(dllexport)")
+target_compile_definitions(${TARGET_NAME} INTERFACE "-DSQLITE_API=__declspec(dllimport)")
+set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "sqlite3")
+add_lib(${TARGET_NAME})
 
-
-
-set(SourceFiles "${SourceFiles};${download_sqlite_SOURCE_DIR}/sqlite3.c")
-set(HeaderFiles "${HeaderFiles};${download_sqlite_SOURCE_DIR}/sqlite3.h")
-set(HeaderFiles "${HeaderFiles};${download_sqlite_SOURCE_DIR}/sqlite3ext.h")
-source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${SourceFiles} ${HeaderFiles})
-
-if(SQLITE_STATIC)
-    add_library(${TARGET_NAME} STATIC ${SourceFiles})
-else()
-    add_library(${TARGET_NAME} SHARED ${SourceFiles})
-endif()
-
-target_include_directories(${TARGET_NAME}
-    PUBLIC $<BUILD_INTERFACE:${download_sqlite_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include/${TARGET_NAME}>
-)
-
-set_target_properties(${TARGET_NAME} PROPERTIES PUBLIC_HEADER "${HeaderFiles}")
-
-install(TARGETS ${TARGET_NAME}
-EXPORT ${TARGET_NAME}Targets 
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    PUBLIC_HEADER DESTINATION include
-)
+set(TARGET_NAME ${ProjectName}_a)
+add_library(${TARGET_NAME} STATIC)
+target_compile_definitions(${TARGET_NAME} PUBLIC -DSTEAM_MSG_API_NODLL)
+set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "sqlite3_a")
+add_lib(${TARGET_NAME})
