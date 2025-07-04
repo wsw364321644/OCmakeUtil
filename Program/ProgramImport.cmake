@@ -43,6 +43,8 @@ FUNCTION(ImportProgram ProgramName)
         if(NOT ${ProgramName}_FOUND)
             if(ProgramName STREQUAL "Perl")
                 ImportPERL()
+            elseif(ProgramName STREQUAL "Python3")
+                ImportPython3()
             else()
                 message(STATUS "no Program ${ProgramName} to import")
             endif()
@@ -85,9 +87,8 @@ FUNCTION(ImportPERL)
         FetchContent_MakeAvailable(download_perl)
         FetchContent_GetProperties(download_perl)
         file(RENAME ${download_perl_SOURCE_DIR} ${STRAWBERRY_PERL_PATH})
+        find_package(Perl REQUIRED)
     endif()
-
-    find_package(Perl REQUIRED)
 
     set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
 ENDFUNCTION(ImportPERL)
@@ -126,3 +127,52 @@ FUNCTION(ImportNASM)
 
     set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
 ENDFUNCTION(ImportNASM)
+
+FUNCTION(ImportPython3)
+    set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProgramName_Lower})
+    set(PYTHON3_PATH ${WORKING_DIRECTORY}/python3)
+    list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${PYTHON3_PATH}")
+    find_package(Python3)
+
+    if(NOT Python3_FOUND)
+        if(NOT IMPORT_PROGRAM_URL)
+            message(FATAL_ERROR "URL NOT SET")
+
+            if(HOST_IS_64BIT)
+                set(IMPORT_PROGRAM_URL https://mirrors.aliyun.com/python-release/windows/python-3.13.5-embed-amd64.zip)
+            else()
+                set(IMPORT_PROGRAM_URL https://mirrors.aliyun.com/python-release/windows/python-3.13.4-embed-win32.zip)
+            endif()
+        endif()
+
+        FetchContent_Declare(download_python3
+            PREFIX ${WORKING_DIRECTORY}
+            URL ${IMPORT_PROGRAM_URL}
+            DOWNLOAD_NO_EXTRACT false
+            DOWNLOAD_EXTRACT_TIMESTAMP false
+        )
+        FetchContent_MakeAvailable(download_python3)
+        FetchContent_GetProperties(download_python3)
+        file(RENAME ${download_python3_SOURCE_DIR} ${PYTHON3_PATH})
+        find_package(Python3 REQUIRED)
+
+        # https://www.youtube.com/watch?v=pQj4b7azNLY
+        file(DOWNLOAD https://bootstrap.pypa.io/get-pip.py ${PYTHON3_PATH}/get-pip.py
+            STATUS status
+            SHOW_PROGRESS
+        )
+        execute_process(COMMAND ${Python_EXECUTABLE} ${PYTHON3_PATH}/get-pip.py)
+        file(GLOB PATH_FILE "*._pth")
+        list(LENGTH PATH_FILE PATH_FILE_LENGTH)
+
+        if(PATH_FILE_LENGTH EQUAL 1)
+            file(READ ${PATH_FILE} PATH_FILE_CONTENTS)
+            string(APPEND PATH_FILE_CONTENTS "Lib\\site-packages\\n")
+            file(WRITE ${PATH_FILE} "${PATH_FILE_CONTENTS}")
+        else()
+            message(FATAL_ERROR "Python _pth file not found or multiple found: ${PATH_FILE}")
+        endif()
+    endif()
+
+    set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
+ENDFUNCTION(ImportPython3)
