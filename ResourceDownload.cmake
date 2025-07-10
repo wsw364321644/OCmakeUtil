@@ -14,12 +14,22 @@ FUNCTION(ResourceDownload ResourceName)
             message(FATAL_ERROR "GIT_TAG is required for ${ResourceName} download")
         endif()
 
-        fetchcontent_declare(
+        string(LENGTH "${INPUT_GIT_TAG}" GIT_TAG_LENGTH)
+        string(REGEX MATCH "^[a-fA-F0-9]+$" MATCH_RESULT "${INPUT_GIT_TAG}")
+
+        if(MATCH_RESULT AND GIT_TAG_LENGTH EQUAL 40)
+            set(GIT_SHALLOW_VAL FALSE)
+        else()
+            set(GIT_SHALLOW_VAL TRUE)
+        endif()
+
+        message(STATUS "Downloading ${ResourceName} from ${INPUT_GIT_REPOSITORY} GIT_TAG ${INPUT_GIT_TAG}")
+        FetchContent_Declare(
             ${ResourceName}
             GIT_REPOSITORY ${INPUT_GIT_REPOSITORY}
             GIT_TAG ${INPUT_GIT_TAG}
             GIT_SUBMODULES ""
-            GIT_SHALLOW TRUE
+            GIT_SHALLOW ${GIT_SHALLOW_VAL}
         )
         FetchContent_Populate(${ResourceName})
 
@@ -44,7 +54,7 @@ FUNCTION(ResourceDownload ResourceName)
             endif()
         endif()
 
-        fetchcontent_declare(
+        FetchContent_Declare(
             ${ResourceName}
             URL ${URL}
             DOWNLOAD_NO_EXTRACT false
