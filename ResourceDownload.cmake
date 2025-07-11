@@ -1,5 +1,6 @@
 include(FetchContent)
 include(ExternalProject)
+include(RegexHelper)
 
 FUNCTION(ResourceDownload ResourceName)
     set(options)
@@ -14,10 +15,9 @@ FUNCTION(ResourceDownload ResourceName)
             message(FATAL_ERROR "GIT_TAG is required for ${ResourceName} download")
         endif()
 
-        string(LENGTH "${INPUT_GIT_TAG}" GIT_TAG_LENGTH)
-        string(REGEX MATCH "^[a-fA-F0-9]+$" MATCH_RESULT "${INPUT_GIT_TAG}")
+        IsSHA1String(INPUT_GIT_TAG BGIT_TAG_SHA1)
 
-        if(MATCH_RESULT AND GIT_TAG_LENGTH EQUAL 40)
+        if(BGIT_TAG_SHA1)
             set(GIT_SHALLOW_VAL FALSE)
         else()
             set(GIT_SHALLOW_VAL TRUE)

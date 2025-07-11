@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
+include(RegexHelper)
 
 FUNCTION(FindInPath ProjectName Path)
     set(options CONFIG REQUIRED)
@@ -116,6 +117,16 @@ FUNCTION(ImportProject ProjectName)
     endif()
 
     if(NOT ${ProjectName}_FOUND)
+        if(IMPORT_PROJECT_TAG)
+            IsSHA1String(IMPORT_PROJECT_TAG BGIT_TAG_SHA1)
+
+            if(BGIT_TAG_SHA1)
+                set(GIT_SHALLOW_VAL FALSE)
+            else()
+                set(GIT_SHALLOW_VAL FALSE)
+            endif()
+        endif()
+
         if(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
         elseif(ProjectName STREQUAL "CURL")
@@ -160,6 +171,10 @@ FUNCTION(ImportProject ProjectName)
             ImportLIBWEBSOCKETS()
         elseif(ProjectName STREQUAL "absl")
             ImportABSL()
+        elseif(ProjectName STREQUAL "simdjson")
+            ImportSIMDJSON()
+        elseif(ProjectName STREQUAL "RapidJSON")
+            ImportRAPIDJSON()
         else()
             message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
@@ -206,8 +221,6 @@ FUNCTION(ImportZLIB)
         set(GIT_REPOSITORY "https://github.com/madler/zlib.git")
     endif()
 
-    # set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
-    # set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -1036,3 +1049,68 @@ FUNCTION(ImportABSL)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${PROJECT_INSTALL_DIR})
 ENDFUNCTION(ImportABSL)
+
+FUNCTION(ImportSIMDJSON)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        set(IMPORT_PROJECT_TAG "0c0ce1bd48baa0677dc7c0945ea7cd1e8b52b297") # 3.13.0
+        message(SEND_ERROR "missing simdjson tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:simdjson/simdjson.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/simdjson/simdjson.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportSIMDJSON)
+
+FUNCTION(ImportRAPIDJSON)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing RapidJSON tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:Tencent/rapidjson.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/Tencent/rapidjson.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportRAPIDJSON)
