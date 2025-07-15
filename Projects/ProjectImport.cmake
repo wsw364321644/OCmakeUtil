@@ -54,6 +54,10 @@ FUNCTION(PostImportProject)
     elseif(ProjectName STREQUAL "SQLite3")
         find_package(SQLite3_a CONFIG REQUIRED)
     endif()
+
+    if(ProjectName STREQUAL "SQLite3")
+        find_package(SQLite3_a CONFIG REQUIRED)
+    endif()
 ENDFUNCTION(PostImportProject)
 
 FUNCTION(ImportProject ProjectName)
@@ -189,8 +193,6 @@ FUNCTION(ImportProject ProjectName)
             message(STATUS "Before Import Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}")
         endif()
     endif()
-
-    PostImportProject()
 ENDFUNCTION(ImportProject)
 
 FUNCTION(ImportZLIB)
