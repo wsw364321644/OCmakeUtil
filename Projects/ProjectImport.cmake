@@ -42,20 +42,7 @@ FUNCTION(PostImportProject)
 
     if(ProjectName STREQUAL "TBB")
         target_compile_definitions(TBB::tbb INTERFACE -D__TBB_BUILD=1)
-        install(
-            FILES "${TBB_DIR}/../../../${CMAKE_INSTALL_BINDIR}/tbb12.dll"
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
-        )
-    elseif(ProjectName STREQUAL "qiniu")
-        install(
-            FILES "${qiniu_DIR}/../../../${CMAKE_INSTALL_BINDIR}/qiniu.dll"
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
-        )
     elseif(ProjectName STREQUAL "SQLite3")
-        find_package(SQLite3_a CONFIG REQUIRED)
-    endif()
-
-    if(ProjectName STREQUAL "SQLite3")
         find_package(SQLite3_a CONFIG REQUIRED)
     endif()
 ENDFUNCTION(PostImportProject)
@@ -114,6 +101,7 @@ FUNCTION(ImportProject ProjectName)
         endif()
     endif()
 
+    # set(CMAKE_FIND_DEBUG_MODE ON)
     find_package(${ProjectName} CONFIG)
 
     if(NOT ${ProjectName}_FOUND)
@@ -193,6 +181,8 @@ FUNCTION(ImportProject ProjectName)
             message(STATUS "Before Import Find ${ProjectName} INCLUDE_DIR :${${ProjectName}_INCLUDE_DIR}")
         endif()
     endif()
+
+    PostImportProject()
 ENDFUNCTION(ImportProject)
 
 FUNCTION(ImportZLIB)
