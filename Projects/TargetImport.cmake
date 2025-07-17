@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 include(FetchContent)
 include(GNUInstallDirs)
+include(RegexHelper)
 
 FUNCTION(ImportTarget TargetName)
     set(options STATIC SSH)
@@ -9,6 +10,16 @@ FUNCTION(ImportTarget TargetName)
 
     cmake_parse_arguments(IMPORT_PROJECT "${options}" "${oneValueArgs}"
         "${multiValueArgs}" ${ARGN})
+
+    if(IMPORT_PROJECT_TAG)
+        IsSHA1String(IMPORT_PROJECT_TAG BGIT_TAG_SHA1)
+
+        if(BGIT_TAG_SHA1)
+            set(GIT_SHALLOW_VAL FALSE)
+        else()
+            set(GIT_SHALLOW_VAL TRUE)
+        endif()
+    endif()
 
     if(TargetName STREQUAL "inih")
         Importinih()
@@ -22,6 +33,8 @@ FUNCTION(ImportTarget TargetName)
         Importbetterenums()
     elseif(TargetName STREQUAL "ValveFileVDF")
         ImportValveFileVDF()
+    elseif(TargetName STREQUAL "RapidJSON")
+        ImportRapidJSON()
     else()
         message(STATUS "no target ${TargetName} to import")
     endif()
@@ -49,6 +62,7 @@ FUNCTION(Importinih)
         inih
         GIT_REPOSITORY ${GIT_REPOSITORY}
         GIT_TAG ${IMPORT_PROJECT_TAG}
+        GIT_SHALLOW ${GIT_SHALLOW_VAL}
     )
     FetchContent_MakeAvailable(inih)
     FetchContent_GetProperties(inih)
@@ -168,6 +182,7 @@ FUNCTION(Importimgui)
         imgui
         GIT_REPOSITORY ${GIT_REPOSITORY}
         GIT_TAG ${IMPORT_PROJECT_TAG}
+        GIT_SHALLOW ${GIT_SHALLOW_VAL}
     )
     FetchContent_MakeAvailable(imgui)
     FetchContent_GetProperties(imgui)
@@ -287,6 +302,7 @@ FUNCTION(Importmpack)
         mpack
         GIT_REPOSITORY ${GIT_REPOSITORY}
         GIT_TAG ${IMPORT_PROJECT_TAG}
+        GIT_SHALLOW ${GIT_SHALLOW_VAL}
     )
     FetchContent_MakeAvailable(mpack)
     FetchContent_GetProperties(mpack)
@@ -367,6 +383,7 @@ FUNCTION(Importrollinghashcpp)
         rollinghashcpp_git
         GIT_REPOSITORY ${GIT_REPOSITORY}
         GIT_TAG ${IMPORT_PROJECT_TAG}
+        GIT_SHALLOW ${GIT_SHALLOW_VAL}
     )
     FetchContent_Populate(rollinghashcpp_git)
     FetchContent_GetProperties(rollinghashcpp_git)
@@ -403,6 +420,7 @@ FUNCTION(Importbetterenums)
         ${TARGET_NAME}
         GIT_REPOSITORY ${GIT_REPOSITORY}
         GIT_TAG ${IMPORT_PROJECT_TAG}
+        GIT_SHALLOW ${GIT_SHALLOW_VAL}
     )
     FetchContent_MakeAvailable(${TARGET_NAME})
     FetchContent_GetProperties(${TARGET_NAME})
@@ -450,6 +468,7 @@ FUNCTION(ImportValveFileVDF)
         ${TargetGitName}
         GIT_REPOSITORY ${GIT_REPOSITORY}
         GIT_TAG ${IMPORT_PROJECT_TAG}
+        GIT_SHALLOW ${GIT_SHALLOW_VAL}
     )
     FetchContent_Populate(${TargetGitName})
     FetchContent_GetProperties(${TargetGitName})
@@ -459,3 +478,35 @@ FUNCTION(ImportValveFileVDF)
     AddTargetInclude(${TARGET_NAME})
     AddTargetInstall(${TARGET_NAME} ${TARGET_NAME})
 ENDFUNCTION(ImportValveFileVDF)
+
+FUNCTION(ImportRapidJSON)
+    if(TARGET ${TargetName})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing PROJECT_TAG")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:Tencent/rapidjson.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/Tencent/rapidjson.git")
+    endif()
+
+    string(TOLOWER "${TargetName}_git" TargetGitName)
+    FetchContent_Declare(
+        ${TargetGitName}
+        GIT_REPOSITORY ${GIT_REPOSITORY}
+        GIT_TAG ${IMPORT_PROJECT_TAG}
+        GIT_SHALLOW ${GIT_SHALLOW_VAL}
+        GIT_SUBMODULES ""
+    )
+    FetchContent_Populate(${TargetGitName})
+    FetchContent_GetProperties(${TargetGitName})
+    NewTargetSource()
+    AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
+    add_library(${TargetName} INTERFACE)
+    AddTargetInclude(${TargetName})
+    AddTargetInstall(${TargetName} ${TargetName})
+ENDFUNCTION(ImportRapidJSON)

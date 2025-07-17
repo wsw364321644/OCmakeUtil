@@ -101,7 +101,7 @@ FUNCTION(ImportProject ProjectName)
         endif()
     endif()
 
-    # set(CMAKE_FIND_DEBUG_MODE ON)
+    #set(CMAKE_FIND_DEBUG_MODE ON)
     find_package(${ProjectName} CONFIG)
 
     if(NOT ${ProjectName}_FOUND)
@@ -115,7 +115,7 @@ FUNCTION(ImportProject ProjectName)
             if(BGIT_TAG_SHA1)
                 set(GIT_SHALLOW_VAL FALSE)
             else()
-                set(GIT_SHALLOW_VAL FALSE)
+                set(GIT_SHALLOW_VAL TRUE)
             endif()
         endif()
 
