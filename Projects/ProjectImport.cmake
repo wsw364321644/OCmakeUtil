@@ -167,6 +167,8 @@ FUNCTION(ImportProject ProjectName)
             ImportSIMDJSON()
         elseif(ProjectName STREQUAL "RapidJSON")
             ImportRAPIDJSON()
+        elseif(ProjectName STREQUAL "sqlpp23")
+            ImportSQLPP23()
         else()
             message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
@@ -1106,3 +1108,32 @@ FUNCTION(ImportRAPIDJSON)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportRAPIDJSON)
+
+FUNCTION(ImportSQLPP23)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:rbock/sqlpp23.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/rbock/sqlpp23.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportSQLPP23)
