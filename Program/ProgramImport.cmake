@@ -45,6 +45,8 @@ FUNCTION(ImportProgram ProgramName)
                 ImportPERL()
             elseif(ProgramName STREQUAL "Python3")
                 ImportPython3()
+            elseif(ProgramName STREQUAL "protoc")
+                Importprotoc()
             else()
                 message(STATUS "no Program ${ProgramName} to import")
             endif()
@@ -176,3 +178,38 @@ FUNCTION(ImportPython3)
 
     set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
 ENDFUNCTION(ImportPython3)
+
+FUNCTION(Importprotoc)
+    set(protoc_PATH ${WORKING_DIRECTORY}/protoc)
+    list(FIND CMAKE_SYSTEM_PROGRAM_PATH ${protoc_PATH} FIND_RES)
+
+    if(FIND_RES GREATER -1)
+        return()
+    endif()
+
+    list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${protoc_PATH}/bin")
+
+    if(NOT EXISTS ${protoc_PATH}/bin/protoc.exe)
+        if(NOT IMPORT_PROGRAM_URL)
+            message(FATAL_ERROR "URL NOT SET")
+
+            if(HOST_IS_64BIT)
+                set(IMPORT_PROGRAM_URL https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-win64.zip)
+            else()
+                set(IMPORT_PROGRAM_URL https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-win32.zip)
+            endif()
+        endif()
+
+        FetchContent_Declare(download_protoc
+            PREFIX ${WORKING_DIRECTORY}
+            URL ${IMPORT_PROGRAM_URL}
+            DOWNLOAD_NO_EXTRACT false
+            DOWNLOAD_EXTRACT_TIMESTAMP false
+        )
+        FetchContent_MakeAvailable(download_protoc)
+        FetchContent_GetProperties(download_protoc)
+        file(RENAME ${download_protoc_SOURCE_DIR} ${protoc_PATH})
+    endif()
+
+    set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
+ENDFUNCTION(Importprotoc)

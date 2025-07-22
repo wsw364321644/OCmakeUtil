@@ -3,6 +3,7 @@ include(FetchContent)
 include(ExternalProject)
 project(project_absl)
 
+set(CMAKE_DEBUG_POSTFIX d)
 set(CMAKE_INSTALL_PREFIX @PROJECT_INSTALL_DIR@)
 set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
 set(OCMAKEUTIL_PATH @OCMAKEUTIL_PATH@)
@@ -28,6 +29,8 @@ FetchContent_Declare(
   absl
   GIT_REPOSITORY @GIT_REPOSITORY@
   GIT_TAG @IMPORT_PROJECT_TAG@
+  GIT_SHALLOW @GIT_SHALLOW_VAL@
+  GIT_SUBMODULES ""
 )
 FetchContent_MakeAvailable(absl)
 FetchContent_GetProperties(absl)
