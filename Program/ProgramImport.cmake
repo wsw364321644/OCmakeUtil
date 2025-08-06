@@ -181,7 +181,7 @@ ENDFUNCTION(ImportPython3)
 
 FUNCTION(Importprotoc)
     set(protoc_PATH ${WORKING_DIRECTORY}/protoc)
-    list(FIND CMAKE_SYSTEM_PROGRAM_PATH ${protoc_PATH} FIND_RES)
+    list(FIND CMAKE_SYSTEM_PROGRAM_PATH "${protoc_PATH}/bin" FIND_RES)
 
     if(FIND_RES GREATER -1)
         return()
@@ -212,4 +212,5 @@ FUNCTION(Importprotoc)
     endif()
 
     set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
+    set(protoc_PATH ${protoc_PATH} CACHE INTERNAL "")
 ENDFUNCTION(Importprotoc)
