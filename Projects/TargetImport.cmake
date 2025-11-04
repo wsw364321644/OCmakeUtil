@@ -162,6 +162,8 @@ ENDFUNCTION(Importinih)
 
 FUNCTION(Importimgui)
     set(TARGET_NAME imgui_a)
+    set(TARGET_NAMESPACE imgui)
+
 
     if(TARGET ${TARGET_NAME})
         return()
@@ -252,7 +254,6 @@ FUNCTION(Importimgui)
         )
     endif()
 
-    set(TARGET_NAME imgui_a)
     add_library(${TARGET_NAME} STATIC ${SourceFiles})
     target_compile_definitions(${TARGET_NAME} PUBLIC -DImTextureID=ImU64)
     target_compile_definitions(${TARGET_NAME} PUBLIC -DIMGUI_USE_WCHAR32)
@@ -278,6 +279,9 @@ FUNCTION(Importimgui)
             target_link_libraries(${TARGET_NAME} PRIVATE GLFW::GLFW)
         endif()
     endif()
+
+    AddTargetInclude(${TARGET_NAME})
+    AddTargetInstall(${TARGET_NAME} ${TARGET_NAMESPACE})
 ENDFUNCTION(Importimgui)
 
 FUNCTION(Importmpack)
