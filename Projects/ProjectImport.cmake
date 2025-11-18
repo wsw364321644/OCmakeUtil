@@ -75,6 +75,10 @@ FUNCTION(ImportProject ProjectName)
         set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_32")
     endif()
 
+    if(IMPORT_PROJECT_TAG)
+        set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_${IMPORT_PROJECT_TAG}")
+    endif()
+
     string(TOLOWER ${ProjectName} ProjectName_Lower)
 
     if(IMPORT_PROJECT_EXTERNAL_DIR)
@@ -131,6 +135,12 @@ FUNCTION(ImportProject ProjectName)
             ImportDETOURS()
         elseif(ProjectName STREQUAL "SDL2")
             ImportSDL2()
+        elseif(ProjectName STREQUAL "SDL3")
+            ImportSDL3()
+        elseif(ProjectName STREQUAL "SDL2_image")
+            ImportSDL2_image()
+        elseif(ProjectName STREQUAL "SDL3_image")
+            ImportSDL3_image()
         elseif(ProjectName STREQUAL "MbedTLS")
             ImportMbedTLS()
         elseif(ProjectName STREQUAL "GLEW")
@@ -169,6 +179,8 @@ FUNCTION(ImportProject ProjectName)
             ImportRAPIDJSON()
         elseif(ProjectName STREQUAL "sqlpp23")
             ImportSQLPP23()
+        elseif(ProjectName STREQUAL "DirectXTex")
+            ImportDirectXTex()
         else()
             message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
@@ -395,10 +407,42 @@ FUNCTION(ImportSDL2)
     endif()
 
     if(IMPORT_PROJECT_TAG)
-        set(SDL2_TAG ${IMPORT_PROJECT_TAG})
-    else()
-        set(SDL2_TAG "f461d91cd265d7b9a44b4d472b1df0c0ad2855a0")
         message(SEND_ERROR "missing SDL2 tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:libsdl-org/SDL.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git")
+    endif()
+
+    if(IMPORT_PROJECT_STATIC_CRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportSDL2)
+
+FUNCTION(ImportSDL3)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing SDL tag")
     endif()
 
     if(IMPORT_PROJECT_SSH)
@@ -427,7 +471,67 @@ FUNCTION(ImportSDL2)
 
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
-ENDFUNCTION(ImportSDL2)
+ENDFUNCTION(ImportSDL3)
+
+FUNCTION(ImportSDL2_image)
+    set(SDL2IMAGE_VENDORED TRUE)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing SDL_image tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:libsdl-org/SDL_image.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/libsdl-org/SDL_image.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportSDL2_image)
+
+FUNCTION(ImportSDL3_image)
+    set(SDL3IMAGE_VENDORED TRUE)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing SDL_image tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:libsdl-org/SDL_image.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/libsdl-org/SDL_image.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportSDL3_image)
 
 FUNCTION(ImportMbedTLS)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
@@ -1141,3 +1245,33 @@ FUNCTION(ImportSQLPP23)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSQLPP23)
+
+
+FUNCTION(ImportDirectXTex)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:microsoft/DirectXTex.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/microsoft/DirectXTex.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportDirectXTex)
