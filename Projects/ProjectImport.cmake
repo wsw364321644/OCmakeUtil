@@ -406,8 +406,8 @@ FUNCTION(ImportSDL2)
         return()
     endif()
 
-    if(IMPORT_PROJECT_TAG)
-        message(SEND_ERROR "missing SDL2 tag")
+    if(NOT IMPORT_PROJECT_TAG)
+        message(FATAL_ERROR "missing SDL2 tag")
     endif()
 
     if(IMPORT_PROJECT_SSH)
@@ -442,7 +442,7 @@ FUNCTION(ImportSDL3)
     endif()
 
     if(NOT IMPORT_PROJECT_TAG)
-        message(SEND_ERROR "missing SDL tag")
+        message(FATAL_ERROR "missing SDL tag")
     endif()
 
     if(IMPORT_PROJECT_SSH)
@@ -483,8 +483,8 @@ FUNCTION(ImportSDL2_image)
         return()
     endif()
 
-    if(IMPORT_PROJECT_TAG)
-        message(SEND_ERROR "missing SDL_image tag")
+    if(NOT IMPORT_PROJECT_TAG)
+        message(FATAL_ERROR "missing SDL_image tag")
     endif()
 
     if(IMPORT_PROJECT_SSH)
@@ -513,8 +513,8 @@ FUNCTION(ImportSDL3_image)
         return()
     endif()
 
-    if(IMPORT_PROJECT_TAG)
-        message(SEND_ERROR "missing SDL_image tag")
+    if(NOT IMPORT_PROJECT_TAG)
+        message(FATAL_ERROR "missing SDL_image tag")
     endif()
 
     if(IMPORT_PROJECT_SSH)
