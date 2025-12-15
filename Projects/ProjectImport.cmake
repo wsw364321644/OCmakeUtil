@@ -97,15 +97,7 @@ FUNCTION(ImportProject ProjectName)
         list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR_PLATFORM}")
     endif()
 
-    if(IMPORT_PROJECT_STATIC)
-        if(ProjectName STREQUAL "ZLIB")
-            set(ZLIB_USE_STATIC_LIBS "ON" PARENT_SCOPE)
-        elseif(ProjectName STREQUAL "CURL")
-            set(CURL_USE_STATIC_LIBS "ON" PARENT_SCOPE)
-        endif()
-    endif()
-
-    #set(CMAKE_FIND_DEBUG_MODE ON)
+    # set(CMAKE_FIND_DEBUG_MODE ON)
     find_package(${ProjectName} CONFIG)
 
     if(NOT ${ProjectName}_FOUND)
@@ -200,6 +192,10 @@ FUNCTION(ImportProject ProjectName)
 ENDFUNCTION(ImportProject)
 
 FUNCTION(ImportZLIB)
+    if(IMPORT_PROJECT_STATIC)
+        set(ZLIB_USE_STATIC_LIBS "ON" PARENT_SCOPE)
+    endif()
+
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -238,6 +234,10 @@ FUNCTION(ImportZLIB)
 ENDFUNCTION(ImportZLIB)
 
 FUNCTION(ImportCURL)
+    if(IMPORT_PROJECT_STATIC)
+        set(CURL_USE_STATIC_LIBS "ON" PARENT_SCOPE)
+    endif()
+
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -252,17 +252,8 @@ FUNCTION(ImportCURL)
         set(CURL_STATIC_CRT OFF)
     endif()
 
-    if(IMPORT_PROJECT_STATIC)
-        set(BUILD_SHARED_LIBS OFF)
-    else()
-        set(BUILD_SHARED_LIBS ON)
-    endif()
-
-    if(IMPORT_PROJECT_TAG)
-        set(CURL_TAG ${IMPORT_PROJECT_TAG})
-    else()
-        set(CURL_TAG "b16d1fa8ee567b52c09a0f89940b07d8491b881d") # curl-8_0_1
-        message(SEND_ERROR "missing CURL tag")
+    if(NOT IMPORT_PROJECT_TAG)
+        message(FATAL_ERROR "missing CURL tag")
     endif()
 
     if(IMPORT_PROJECT_SSH)
@@ -1245,7 +1236,6 @@ FUNCTION(ImportSQLPP23)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSQLPP23)
-
 
 FUNCTION(ImportDirectXTex)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)

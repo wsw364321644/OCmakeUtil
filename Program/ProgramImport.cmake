@@ -74,7 +74,7 @@ FUNCTION(ImportPERL)
             message(FATAL_ERROR "URL NOT SET")
 
             if(HOST_IS_64BIT)
-                set(IMPORT_PROGRAM_URL https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_53822_64bit/strawberry-perl-5.38.2.2-64bit-portable.zip)
+                set(IMPORT_PROGRAM_URL https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_54201_64bit/strawberry-perl-5.42.0.1-64bit-portable.zip)
             else()
                 set(IMPORT_PROGRAM_URL https://strawberryperl.com/download/5.32.1.1/strawberry-perl-5.32.1.1-32bit-portable.zip)
             endif()
