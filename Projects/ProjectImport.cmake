@@ -236,6 +236,8 @@ FUNCTION(ImportZLIB)
 ENDFUNCTION(ImportZLIB)
 
 FUNCTION(ImportCURL)
+    # already define CMAKE_DEBUG_POSTFIX
+    # build_shared or static
     if(IMPORT_PROJECT_STATIC)
         set(CURL_USE_STATIC_LIBS "ON" PARENT_SCOPE)
     endif()
@@ -266,6 +268,8 @@ FUNCTION(ImportCURL)
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -1148,7 +1152,7 @@ FUNCTION(ImportABSL)
 ENDFUNCTION(ImportABSL)
 
 FUNCTION(ImportSIMDJSON)
-#simdjson build both static and shared library .
+    # simdjson build both static and shared library .
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1170,6 +1174,8 @@ FUNCTION(ImportSIMDJSON)
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
