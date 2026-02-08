@@ -1148,18 +1148,13 @@ FUNCTION(ImportABSL)
 ENDFUNCTION(ImportABSL)
 
 FUNCTION(ImportSIMDJSON)
+#simdjson build both static and shared library .
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
     if(FindInPath_FOUND)
         AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
         return()
-    endif()
-
-    if(IMPORT_PROJECT_STATIC_CRT)
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    else()
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 
     if(NOT IMPORT_PROJECT_TAG)
