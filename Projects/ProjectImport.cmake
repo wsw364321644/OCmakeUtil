@@ -115,7 +115,9 @@ FUNCTION(ImportProject ProjectName)
             endif()
         endif()
 
-        if(ProjectName STREQUAL "ZLIB")
+        if(ProjectName STREQUAL "spdlog")
+            ImportSPDLOG()
+        elseif(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
         elseif(ProjectName STREQUAL "CURL")
             ImportCURL()
@@ -175,6 +177,8 @@ FUNCTION(ImportProject ProjectName)
             ImportDirectXTex()
         elseif(ProjectName STREQUAL "CapnProto")
             ImportCapnProto()
+        elseif(ProjectName STREQUAL "re2")
+            ImportRE2()
         else()
             message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
@@ -192,6 +196,37 @@ FUNCTION(ImportProject ProjectName)
 
     PostImportProject()
 ENDFUNCTION(ImportProject)
+
+FUNCTION(ImportSPDLOG)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing SPDLOG tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:gabime/spdlog.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/gabime/spdlog.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportSPDLOG)
 
 FUNCTION(ImportZLIB)
     if(IMPORT_PROJECT_STATIC)
@@ -1158,9 +1193,9 @@ FUNCTION(ImportABSL)
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
-    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
-    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
@@ -1317,3 +1352,34 @@ FUNCTION(ImportCapnProto)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportCapnProto)
+
+FUNCTION(ImportRE2)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:google/re2.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/google/re2.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportRE2)
