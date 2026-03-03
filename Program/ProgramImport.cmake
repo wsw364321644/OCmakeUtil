@@ -39,7 +39,6 @@ FUNCTION(ImportProgram ProgramName)
         endif()
     else()
         find_package(${ProgramName})
-
         if(NOT ${ProgramName}_FOUND)
             if(ProgramName STREQUAL "Perl")
                 ImportPERL()
@@ -47,6 +46,8 @@ FUNCTION(ImportProgram ProgramName)
                 ImportPython3()
             elseif(ProgramName STREQUAL "protoc")
                 Importprotoc()
+            elseif(ProgramName STREQUAL "SteamLanguageParser")
+                ImportSteamLanguageParser()
             else()
                 message(STATUS "no Program ${ProgramName} to import")
             endif()
@@ -62,6 +63,12 @@ ENDFUNCTION(ImportProgram)
 
 FUNCTION(ImportPERL)
     set(STRAWBERRY_PERL_PATH ${WORKING_DIRECTORY}/strawberry-perl)
+    list(FIND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/perl/bin" FIND_RES)
+
+    if(FIND_RES GREATER -1)
+        return()
+    endif()
+
     list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/perl/bin")
 
     # list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${STRAWBERRY_PERL_PATH}/perl/site/bin")
@@ -97,6 +104,12 @@ ENDFUNCTION(ImportPERL)
 
 FUNCTION(ImportNASM)
     set(NASM_PATH ${WORKING_DIRECTORY}/nasm)
+    list(FIND CMAKE_SYSTEM_PROGRAM_PATH "${NASM_PATH}" FIND_RES)
+
+    if(FIND_RES GREATER -1)
+        return()
+    endif()
+
     list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${NASM_PATH}")
     include(CMakeDetermineASM_NASMCompiler)
 
@@ -133,6 +146,12 @@ ENDFUNCTION(ImportNASM)
 FUNCTION(ImportPython3)
     set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProgramName_Lower})
     set(PYTHON3_PATH ${WORKING_DIRECTORY}/python3)
+    list(FIND CMAKE_SYSTEM_PROGRAM_PATH "${PYTHON3_PATH}" FIND_RES)
+
+    if(FIND_RES GREATER -1)
+        return()
+    endif()
+
     list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${PYTHON3_PATH}")
     find_package(Python3)
 
@@ -214,3 +233,64 @@ FUNCTION(Importprotoc)
     set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
     set(protoc_PATH ${protoc_PATH} CACHE INTERNAL "")
 ENDFUNCTION(Importprotoc)
+
+FUNCTION(ImportSteamLanguageParser)
+    set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProgramName_Lower})
+    set(SteamLanguageParser_PATH ${WORKING_DIRECTORY}/SteamLanguageParser)
+
+    # set(CMAKE_SYSTEM_PROGRAM_PATH "" CACHE INTERNAL "")
+    list(FIND CMAKE_SYSTEM_PROGRAM_PATH "${SteamLanguageParser_PATH}" FIND_RES)
+
+    # message(FATAL_ERROR "${CMAKE_SYSTEM_PROGRAM_PATH}")
+    if(FIND_RES GREATER -1)
+        return()
+    endif()
+
+    list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${SteamLanguageParser_PATH}")
+
+    find_package(SteamLanguageParser)
+    if(NOT STEAMLANGUAGEPARSER_FOUND)
+        FetchContent_Declare(download_SteamLanguageParser
+            PREFIX ${WORKING_DIRECTORY}
+            GIT_REPOSITORY https://github.com/wsw364321644/SteamLanguageParser.git
+            GIT_TAG main
+            GIT_SHALLOW TRUE
+        )
+        FetchContent_Populate(download_SteamLanguageParser)
+        FetchContent_GetProperties(download_SteamLanguageParser)
+
+        if(MSVC)
+            if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+                set(CMAKE_GENERATOR_PLATFORM "-A win32")
+            elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+                set(CMAKE_GENERATOR_PLATFORM "-A x64")
+            endif()
+        endif()
+
+        execute_process(
+            COMMAND ${CMAKE_COMMAND}
+            -D "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
+            -B build ${download_steamlanguageparser_SOURCE_DIR}
+            ${CMAKE_GENERATOR_PLATFORM}
+            WORKING_DIRECTORY ${WORKING_DIRECTORY}
+            RESULT_VARIABLE result
+        )
+
+        if(NOT ${result} EQUAL 0)
+            message(FATAL_ERROR "Failed to build SteamLanguageParser")
+        endif()
+
+        execute_process(COMMAND ${CMAKE_COMMAND} --build . --target install --config Release
+            WORKING_DIRECTORY ${WORKING_DIRECTORY}/build
+            RESULT_VARIABLE result
+        )
+
+        if(NOT ${result} EQUAL 0)
+            message(FATAL_ERROR "Failed to build SteamLanguageParser")
+        endif()
+        file(RENAME ${WORKING_DIRECTORY}/build/rundir/bin ${SteamLanguageParser_PATH})
+    endif()
+
+    set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
+    set(SteamLanguageParser_PATH ${SteamLanguageParser_PATH} CACHE INTERNAL "")
+ENDFUNCTION(ImportSteamLanguageParser)
