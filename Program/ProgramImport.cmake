@@ -273,7 +273,6 @@ FUNCTION(ImportSteamLanguageParser)
             COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV}
             -D "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
             -B build ${download_steamlanguageparser_SOURCE_DIR}
-            ${CMAKE_GENERATOR_PLATFORM}
             WORKING_DIRECTORY ${WORKING_DIRECTORY}
             RESULT_VARIABLE result
         )
