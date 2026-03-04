@@ -39,6 +39,7 @@ FUNCTION(ImportProgram ProgramName)
         endif()
     else()
         find_package(${ProgramName})
+
         if(NOT ${ProgramName}_FOUND)
             if(ProgramName STREQUAL "Perl")
                 ImportPERL()
@@ -249,6 +250,7 @@ FUNCTION(ImportSteamLanguageParser)
     list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${SteamLanguageParser_PATH}")
 
     find_package(SteamLanguageParser)
+
     if(NOT STEAMLANGUAGEPARSER_FOUND)
         FetchContent_Declare(download_SteamLanguageParser
             PREFIX ${WORKING_DIRECTORY}
@@ -259,16 +261,16 @@ FUNCTION(ImportSteamLanguageParser)
         FetchContent_Populate(download_SteamLanguageParser)
         FetchContent_GetProperties(download_SteamLanguageParser)
 
-        if(MSVC)
-            if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-                set(CMAKE_GENERATOR_PLATFORM "-A win32")
-            elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-                set(CMAKE_GENERATOR_PLATFORM "-A x64")
-            endif()
+        list(APPEND CMAKE_GENERATOR_ARGV "-G")
+        list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR}")
+
+        if(CMAKE_GENERATOR_PLATFORM)
+            list(APPEND CMAKE_GENERATOR_ARGV "-A")
+            list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR_PLATFORM}")
         endif()
 
         execute_process(
-            COMMAND ${CMAKE_COMMAND}
+            COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV}
             -D "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
             -B build ${download_steamlanguageparser_SOURCE_DIR}
             ${CMAKE_GENERATOR_PLATFORM}
@@ -288,6 +290,7 @@ FUNCTION(ImportSteamLanguageParser)
         if(NOT ${result} EQUAL 0)
             message(FATAL_ERROR "Failed to build SteamLanguageParser")
         endif()
+
         file(RENAME ${WORKING_DIRECTORY}/build/rundir/bin ${SteamLanguageParser_PATH})
     endif()
 
