@@ -303,48 +303,54 @@ macro(AddTargetInclude TARGET_NAME)
     endif()
 endmacro(AddTargetInclude)
 
-macro(AddTargetInstall TARGET_NAME TARGET_NAMESPACE)
-    include(CMakePackageConfigHelpers)
+macro(AddTargetInstall TARGET_NAME EXPORT_NAME)
     get_target_property(target_type ${TARGET_NAME} TYPE)
 
+    set(TARGET_NAMESPACE ${EXPORT_NAME})
+
     if(NOT target_type STREQUAL "EXECUTABLE")
-        add_library("${TARGET_NAMESPACE}::${TARGET_NAME}" ALIAS ${TARGET_NAME})
+        add_library(${TARGET_NAMESPACE}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     endif()
 
     install(TARGETS ${TARGET_NAME}
-        EXPORT ${TARGET_NAME}Targets
-        LIBRARY DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_BINDIR}
-        PUBLIC_HEADER DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+        EXPORT ${EXPORT_NAME}Targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         FILE_SET HEADERS
-        DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
+endmacro(AddTargetInstall)
 
-    install(EXPORT ${TARGET_NAME}Targets
-        FILE ${TARGET_NAME}Targets.cmake
+macro(ExportFromInstall EXPORT_NAME)
+    include(CMakePackageConfigHelpers)
+    set(TARGET_NAMESPACE ${EXPORT_NAME})
+
+    install(EXPORT ${EXPORT_NAME}Targets
+        FILE ${EXPORT_NAME}Targets.cmake
         NAMESPACE ${TARGET_NAMESPACE}::
-        DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
     )
 
     configure_package_config_file(
         ${OCMAKEUTIL_PROJECTS_PATH}/CommonConfig.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}Config.cmake
-        INSTALL_DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+        ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}Config.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
     )
 
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}Config.cmake
-        DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}Config.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
     )
 
-    if(DEFINED ${TARGET_NAME}_VERSION_STRING)
+    if(DEFINED PROJECT_VERSION)
         write_basic_package_version_file(
-            ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}ConfigVersion.cmake
-            VERSION ${${TARGET_NAME}_VERSION_STRING}
+            ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
+            VERSION ${PROJECT_VERSION}
             COMPATIBILITY AnyNewerVersion)
 
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}ConfigVersion.cmake
-            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
         )
     endif()
-endmacro(AddTargetInstall)
+endmacro(ExportFromInstall)
