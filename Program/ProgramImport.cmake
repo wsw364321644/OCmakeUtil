@@ -237,17 +237,17 @@ ENDFUNCTION(Importprotoc)
 
 FUNCTION(ImportSteamLanguageParser)
     set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProgramName_Lower})
-    set(SteamLanguageParser_PATH ${WORKING_DIRECTORY}/SteamLanguageParser)
+    set(SteamLanguageParser_NEW_PATH ${WORKING_DIRECTORY}/SteamLanguageParser)
 
     # set(CMAKE_SYSTEM_PROGRAM_PATH "" CACHE INTERNAL "")
-    list(FIND CMAKE_SYSTEM_PROGRAM_PATH "${SteamLanguageParser_PATH}" FIND_RES)
+    list(FIND CMAKE_SYSTEM_PROGRAM_PATH "${SteamLanguageParser_NEW_PATH}" FIND_RES)
 
     # message(FATAL_ERROR "${CMAKE_SYSTEM_PROGRAM_PATH}")
     if(FIND_RES GREATER -1)
         return()
     endif()
 
-    list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${SteamLanguageParser_PATH}")
+    list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${SteamLanguageParser_NEW_PATH}")
 
     find_package(SteamLanguageParser)
 
@@ -290,9 +290,9 @@ FUNCTION(ImportSteamLanguageParser)
             message(FATAL_ERROR "Failed to build SteamLanguageParser")
         endif()
 
-        file(RENAME ${WORKING_DIRECTORY}/build/rundir/bin ${SteamLanguageParser_PATH})
+        file(RENAME ${WORKING_DIRECTORY}/build/rundir/bin ${SteamLanguageParser_NEW_PATH})
+        find_package(SteamLanguageParser REQUIRED)
     endif()
 
     set(CMAKE_SYSTEM_PROGRAM_PATH ${CMAKE_SYSTEM_PROGRAM_PATH} CACHE INTERNAL "")
-    set(SteamLanguageParser_PATH ${SteamLanguageParser_PATH} CACHE INTERNAL "")
 ENDFUNCTION(ImportSteamLanguageParser)
