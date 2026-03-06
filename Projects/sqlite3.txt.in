@@ -8,9 +8,9 @@ set(OCMAKEUTIL_PROJECTS_PATH @OCMAKEUTIL_PROJECTS_PATH@)
 set(ProjectName_Lower @ProjectName_Lower@)
 set(ProjectName @ProjectName@)
 
-project(download_sqlite)
+project(SQLite3)
 include(GNUInstallDirs)
-
+set(CMAKE_DEBUG_POSTFIX d)
 add_subdirectory(${OCMAKEUTIL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/ocmakeutil)
 
 if(IMPORT_PROJECT_STATIC_CRT)
@@ -67,8 +67,9 @@ list(APPEND SourceFiles ${SourceFiles} ${download_sqlite_SOURCE_DIR}/sqlite3.c)
 list(APPEND PrivateFiles ${PrivateFiles} ${download_sqlite_SOURCE_DIR}/sqlite3.c)
 
 function(add_lib TARGET_NAME)
+    add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     AddTargetInclude(${TARGET_NAME})
-    AddTargetInstall(${TARGET_NAME} SQLite3)
+    AddTargetInstall(${TARGET_NAME} ${PROJECT_NAME})
 endfunction()
 
 set(TARGET_NAME ${ProjectName})
@@ -83,3 +84,5 @@ add_library(${TARGET_NAME} STATIC)
 target_compile_definitions(${TARGET_NAME} PUBLIC -DSTEAM_MSG_API_NODLL)
 set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "sqlite3_a")
 add_lib(${TARGET_NAME})
+
+ExportFromInstall(${PROJECT_NAME})

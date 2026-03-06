@@ -4,10 +4,6 @@ include(ExternalProject)
 include(CMakePackageConfigHelpers)
 set(FETCHCONTENT_QUIET FALSE)
 
-project(project_qiniu)
-enable_language(C)
-set(CMAKE_C_STANDARD 99)
-
 set(OCMAKEUTIL_PROJECTS_PATH @OCMAKEUTIL_PROJECTS_PATH@)
 set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
 set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
@@ -15,6 +11,12 @@ set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
 set(CURL_USE_STATIC_LIBS @CURL_USE_STATIC_LIBS@)
 
 include(ProjectDefinition)
+
+project(qiniu)
+enable_language(C)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_DEBUG_POSTFIX d)
+include(GNUInstallDirs)
 find_package(CURL REQUIRED)
 find_package(OpenSSL REQUIRED)
 
@@ -57,6 +59,7 @@ set(PublicIncludeFolders ${qiniu_SOURCE_DIR})
 
 function(update_lib TARGET_NAME)
   set(QINIU_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}/")
+
   if(WIN32)
     set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:msvcrt")
     set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_RELEASE "/NODEFAULTLIB:LIBCMTD.LIB /NODEFAULTLIB:msvcrtd")
@@ -67,59 +70,28 @@ function(update_lib TARGET_NAME)
   target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::Crypto)
 
   AddTargetInclude(${TARGET_NAME})
-
-  install(TARGETS ${TARGET_NAME}
-    EXPORT ${TARGET_NAME}Targets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  )
-
-  install(EXPORT ${TARGET_NAME}Targets
-    FILE ${TARGET_NAME}Targets.cmake
-    NAMESPACE qiniu::
-    DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
-  )
-
-  configure_package_config_file(
-    ${OCMAKEUTIL_PROJECTS_PATH}/CommonConfig.cmake.in
-    ${PROJECT_BINARY_DIR}/${TARGET_NAME}Config.cmake
-    INSTALL_DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
-  )
-
-  install(FILES ${PROJECT_BINARY_DIR}/${TARGET_NAME}Config.cmake
-    DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
-  )
-
-  write_basic_package_version_file(
-    ${PROJECT_BINARY_DIR}/${TARGET_NAME}ConfigVersion.cmake
-    VERSION ${QINIU_VERSION_STRING}
-    COMPATIBILITY AnyNewerVersion)
-
-  install(FILES ${PROJECT_BINARY_DIR}/${TARGET_NAME}ConfigVersion.cmake
-    DESTINATION ${QINIU_CONFIG_INSTALL_DIR}
-  )
+  add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+  AddTargetInstall(${TARGET_NAME} ${PROJECT_NAME})
 endfunction()
 
 install(DIRECTORY
   "${qiniu_SOURCE_DIR}/b64/"
-  DESTINATION include/b64/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/b64/
   FILES_MATCHING PATTERN "*.h")
 
 install(DIRECTORY
   "${qiniu_SOURCE_DIR}/cJSON/"
-  DESTINATION include/cJSON/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cJSON/
   FILES_MATCHING PATTERN "*.h")
 
 install(DIRECTORY
   "${qiniu_SOURCE_DIR}/hashmap/"
-  DESTINATION include/hashmap/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hashmap/
   FILES_MATCHING PATTERN "*.h")
 
 install(DIRECTORY
   "${qiniu_SOURCE_DIR}/qiniu/"
-  DESTINATION include/qiniu/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qiniu/
   FILES_MATCHING PATTERN "*.h"
   PATTERN "private" EXCLUDE)
 
@@ -129,6 +101,8 @@ target_compile_definitions(${TARGET_NAME} PRIVATE -DCOMPILING_QINIU_LIBRARY_DLL)
 target_compile_definitions(${TARGET_NAME} INTERFACE -DUSING_QINIU_LIBRARY_DLL)
 update_lib(${TARGET_NAME})
 
-SET(TARGET_NAME ${TARGET_NAME}_static)
+SET(TARGET_NAME ${TARGET_NAME}_a)
 add_library(${TARGET_NAME} STATIC ${SourceFiles})
 update_lib(${TARGET_NAME})
+
+ExportFromInstall(${PROJECT_NAME})

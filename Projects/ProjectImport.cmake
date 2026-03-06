@@ -342,6 +342,8 @@ FUNCTION(ImportSQLITE3)
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
@@ -621,6 +623,8 @@ FUNCTION(ImportGLEW)
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    # compile debug release in same time
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
@@ -652,6 +656,8 @@ FUNCTION(ImportRAPIDFUZZ)
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    # header only library
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
@@ -689,6 +695,8 @@ FUNCTION(ImportxxHash)
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
@@ -725,6 +733,8 @@ FUNCTION(ImportZSTD)
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -851,6 +861,8 @@ FUNCTION(ImportQINIU)
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
 
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -1101,12 +1113,13 @@ FUNCTION(ImportLIBWEBSOCKETS)
     if(IMPORT_PROJECT_SSH)
         set(GIT_REPOSITORY "git@github.com:warmcat/libwebsockets.git")
     else()
-        set(GIT_REPOSITORY "https://libwebsockets.org/repo/libwebsockets
-")
+        set(GIT_REPOSITORY "https://github.com/warmcat/libwebsockets.git")
     endif()
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
