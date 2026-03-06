@@ -36,8 +36,9 @@ FetchContent_Declare(
   qiniu
   GIT_REPOSITORY @GIT_REPOSITORY@
   GIT_TAG @IMPORT_PROJECT_TAG@
+  SOURCE_SUBDIR "avoid_add_subdirectory"
 )
-FetchContent_Populate(qiniu)
+FetchContent_MakeAvailable(qiniu)
 FetchContent_GetProperties(qiniu)
 
 set(REGEX_STRING "^const *char *\\*version *= *\\\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\\\"\\;$")

@@ -257,8 +257,9 @@ FUNCTION(ImportSteamLanguageParser)
             GIT_REPOSITORY https://github.com/wsw364321644/SteamLanguageParser.git
             GIT_TAG main
             GIT_SHALLOW TRUE
+            SOURCE_SUBDIR "avoid_add_subdirectory"
         )
-        FetchContent_Populate(download_SteamLanguageParser)
+        FetchContent_MakeAvailable(download_SteamLanguageParser)
         FetchContent_GetProperties(download_SteamLanguageParser)
 
         list(APPEND CMAKE_GENERATOR_ARGV "-G")

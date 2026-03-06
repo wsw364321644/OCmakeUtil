@@ -392,18 +392,20 @@ FUNCTION(Importrollinghashcpp)
         set(GIT_REPOSITORY "https://github.com/lemire/rollinghashcpp.git")
     endif()
 
+    string(TOLOWER "${TARGET_NAME}_git" TargetGitName)
     FetchContent_Declare(
-        rollinghashcpp_git
+        ${TargetGitName}
         GIT_REPOSITORY ${GIT_REPOSITORY}
         GIT_TAG ${IMPORT_PROJECT_TAG}
         GIT_SHALLOW ${GIT_SHALLOW_VAL}
+        SOURCE_SUBDIR "avoid_add_subdirectory"
     )
-    FetchContent_Populate(rollinghashcpp_git)
-    FetchContent_GetProperties(rollinghashcpp_git)
+    FetchContent_MakeAvailable(${TargetGitName})
+    FetchContent_GetProperties(${TargetGitName})
 
     NewTargetSource()
-    AddSourceFolder(RECURSE INTERFACE "${rollinghashcpp_git_SOURCE_DIR}/include")
-    source_group(TREE ${rollinghashcpp_git_SOURCE_DIR} FILES ${SourceFiles})
+    AddSourceFolder(RECURSE INTERFACE "${${TargetGitName}_SOURCE_DIR}/include")
+    source_group(TREE ${${TargetGitName}_SOURCE_DIR} FILES ${SourceFiles})
 
     add_library(${TARGET_NAME} INTERFACE ${SourceFiles})
     add_library(${TARGET_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
@@ -484,8 +486,9 @@ FUNCTION(ImportValveFileVDF)
         GIT_REPOSITORY ${GIT_REPOSITORY}
         GIT_TAG ${IMPORT_PROJECT_TAG}
         GIT_SHALLOW ${GIT_SHALLOW_VAL}
+        SOURCE_SUBDIR "avoid_add_subdirectory"
     )
-    FetchContent_Populate(${TargetGitName})
+    FetchContent_MakeAvailable(${TargetGitName})
     FetchContent_GetProperties(${TargetGitName})
     NewTargetSource()
     AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
@@ -518,8 +521,9 @@ FUNCTION(ImportRapidJSON)
         GIT_TAG ${IMPORT_PROJECT_TAG}
         GIT_SHALLOW ${GIT_SHALLOW_VAL}
         GIT_SUBMODULES ""
+        SOURCE_SUBDIR "avoid_add_subdirectory"
     )
-    FetchContent_Populate(${TargetGitName})
+    FetchContent_MakeAvailable(${TargetGitName})
     FetchContent_GetProperties(${TargetGitName})
     NewTargetSource()
     AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")

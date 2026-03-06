@@ -30,8 +30,9 @@ FUNCTION(ResourceDownload ResourceName)
             GIT_TAG ${INPUT_GIT_TAG}
             GIT_SUBMODULES ""
             GIT_SHALLOW ${GIT_SHALLOW_VAL}
+            SOURCE_SUBDIR "avoid_add_subdirectory"
         )
-        FetchContent_Populate(${ResourceName})
+        FetchContent_MakeAvailable(${ResourceName})
 
     else()
         if(NOT INPUT_URL)
