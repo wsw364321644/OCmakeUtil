@@ -42,6 +42,7 @@ ENDFUNCTION(ImportTarget)
 
 FUNCTION(Importinih)
     set(TARGET_NAME inih)
+    set(PACKAGE_NAME ${TARGET_NAME})
 
     if(TARGET ${TARGET_NAME})
         return()
@@ -102,6 +103,7 @@ FUNCTION(Importinih)
     endfunction()
 
     add_library(${TARGET_NAME} SHARED)
+    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
     target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
@@ -110,6 +112,7 @@ FUNCTION(Importinih)
 
     set(TARGET_NAME ${TARGET_NAME}_a)
     add_library(${TARGET_NAME} STATIC)
+    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
     add_inih(${TARGET_NAME})
@@ -134,36 +137,37 @@ FUNCTION(Importinih)
         )
         install(TARGETS ${TARGET_NAME}
             EXPORT ${TARGET_NAME}Targets
-            LIBRARY DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
-            RUNTIME DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_BINDIR}
-            PUBLIC_HEADER DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
             FILE_SET HEADERS
-            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         )
 
         install(EXPORT ${TARGET_NAME}Targets
             FILE ${TARGET_NAME}Targets.cmake
             NAMESPACE inih::
-            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
         )
     endfunction()
 
     set(TARGET_NAME inihpp)
     add_library(${TARGET_NAME} SHARED)
+    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
     target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
     add_inihpp(${TARGET_NAME})
 
     set(TARGET_NAME ${TARGET_NAME}_a)
     add_library(${TARGET_NAME} STATIC)
+    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     add_inihpp(${TARGET_NAME})
 ENDFUNCTION(Importinih)
 
 FUNCTION(Importimgui)
     set(TARGET_NAME imgui_a)
     set(TARGET_NAMESPACE imgui)
-
 
     if(TARGET ${TARGET_NAME})
         return()
@@ -255,6 +259,7 @@ FUNCTION(Importimgui)
     endif()
 
     add_library(${TARGET_NAME} STATIC ${SourceFiles})
+    add_library(${TARGET_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     target_compile_definitions(${TARGET_NAME} PUBLIC -DImTextureID=ImU64)
     target_compile_definitions(${TARGET_NAME} PUBLIC -DIMGUI_USE_WCHAR32)
 
@@ -282,10 +287,12 @@ FUNCTION(Importimgui)
 
     AddTargetInclude(${TARGET_NAME})
     AddTargetInstall(${TARGET_NAME} ${TARGET_NAMESPACE})
+    ExportFromInstall(${TARGET_NAME})
 ENDFUNCTION(Importimgui)
 
 FUNCTION(Importmpack)
     set(TARGET_NAME mpack)
+    set(PACKAGE_NAME)
 
     if(TARGET ${TARGET_NAME})
         return()
@@ -334,6 +341,7 @@ FUNCTION(Importmpack)
     )
 
     add_library(${TARGET_NAME} SHARED)
+    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     target_sources(
         ${TARGET_NAME}
         PRIVATE
@@ -350,6 +358,7 @@ FUNCTION(Importmpack)
 
     set(TARGET_NAME ${TARGET_NAME}_a)
     add_library(${TARGET_NAME} STATIC)
+    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     target_sources(
         ${TARGET_NAME}
         PRIVATE
@@ -397,9 +406,10 @@ FUNCTION(Importrollinghashcpp)
     source_group(TREE ${rollinghashcpp_git_SOURCE_DIR} FILES ${SourceFiles})
 
     add_library(${TARGET_NAME} INTERFACE ${SourceFiles})
-
+    add_library(${TARGET_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     AddTargetInclude(${TARGET_NAME})
-    AddTargetInstall(${TARGET_NAME} rollinghashcpp)
+    AddTargetInstall(${TARGET_NAME} ${TARGET_NAME})
+    ExportFromInstall(${TARGET_NAME})
 ENDFUNCTION(Importrollinghashcpp)
 
 FUNCTION(Importbetterenums)
@@ -437,6 +447,7 @@ FUNCTION(Importbetterenums)
     )
 
     add_library(${TARGET_NAME} INTERFACE)
+    add_library(${TARGET_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     target_sources(
         ${TARGET_NAME}
         PUBLIC
@@ -479,8 +490,10 @@ FUNCTION(ImportValveFileVDF)
     NewTargetSource()
     AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
     add_library(${TARGET_NAME} INTERFACE)
+    add_library(${TARGET_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     AddTargetInclude(${TARGET_NAME})
     AddTargetInstall(${TARGET_NAME} ${TARGET_NAME})
+    ExportFromInstall(${TARGET_NAME})
 ENDFUNCTION(ImportValveFileVDF)
 
 FUNCTION(ImportRapidJSON)
@@ -511,6 +524,8 @@ FUNCTION(ImportRapidJSON)
     NewTargetSource()
     AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
     add_library(${TargetName} INTERFACE)
+    add_library(${TargetName}::${TargetName} ALIAS ${TargetName})
     AddTargetInclude(${TargetName})
     AddTargetInstall(${TargetName} ${TargetName})
+    ExportFromInstall(${TargetName})
 ENDFUNCTION(ImportRapidJSON)

@@ -6,11 +6,10 @@ set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
 set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
 
 if(IMPORT_PROJECT_STATIC_CRT)
-  if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-  endif()
+else()
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
-
 
 ExternalProject_Add(simdjson
   GIT_REPOSITORY @GIT_REPOSITORY@

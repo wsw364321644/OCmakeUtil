@@ -304,13 +304,13 @@ macro(AddTargetInclude TARGET_NAME)
 endmacro(AddTargetInclude)
 
 macro(AddTargetInstall TARGET_NAME EXPORT_NAME)
-    get_target_property(target_type ${TARGET_NAME} TYPE)
+    # get_target_property(target_type ${TARGET_NAME} TYPE)
 
-    set(TARGET_NAMESPACE ${EXPORT_NAME})
+    # set(TARGET_NAMESPACE ${EXPORT_NAME})
 
-    if(NOT target_type STREQUAL "EXECUTABLE")
-        add_library(${TARGET_NAMESPACE}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-    endif()
+    # if(NOT target_type STREQUAL "EXECUTABLE")
+    #     add_library(${TARGET_NAMESPACE}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+    # endif()
 
     install(TARGETS ${TARGET_NAME}
         EXPORT ${EXPORT_NAME}Targets
@@ -325,6 +325,7 @@ endmacro(AddTargetInstall)
 
 macro(ExportFromInstall EXPORT_NAME)
     include(CMakePackageConfigHelpers)
+    set(EXPORT_NAME ${EXPORT_NAME})
     set(TARGET_NAMESPACE ${EXPORT_NAME})
 
     install(EXPORT ${EXPORT_NAME}Targets
