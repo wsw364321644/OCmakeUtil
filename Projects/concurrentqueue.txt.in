@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.24)
+include(ExternalProject)
+project(project_concurrentqueue)
+
+ExternalProject_Add(concurrentqueue
+  GIT_REPOSITORY @GIT_REPOSITORY@
+  GIT_TAG @IMPORT_PROJECT_TAG@
+  GIT_SHALLOW @GIT_SHALLOW_VAL@
+  CMAKE_ARGS
+  -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+)
