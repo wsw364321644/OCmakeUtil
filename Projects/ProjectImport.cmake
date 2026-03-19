@@ -42,8 +42,6 @@ FUNCTION(PostImportProject)
 
     if(ProjectName STREQUAL "TBB")
         target_compile_definitions(TBB::tbb INTERFACE -D__TBB_BUILD=1)
-    elseif(ProjectName STREQUAL "SQLite3")
-        find_package(SQLite3_a CONFIG REQUIRED)
     endif()
 ENDFUNCTION(PostImportProject)
 
@@ -177,6 +175,8 @@ FUNCTION(ImportProject ProjectName)
             ImportRAPIDJSON()
         elseif(ProjectName STREQUAL "sqlpp23")
             ImportSQLPP23()
+        elseif(ProjectName STREQUAL "SOCI")
+            ImportSOCI()
         elseif(ProjectName STREQUAL "DirectXTex")
             ImportDirectXTex()
         elseif(ProjectName STREQUAL "CapnProto")
@@ -348,16 +348,11 @@ ENDFUNCTION(ImportCURL)
 
 FUNCTION(ImportSQLITE3)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR}/${ProjectName} CONFIG)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG)
 
     if(FindInPath_FOUND)
-        FindInPath(${ProjectName}_a ${${ProjectName}_INSTALL_DIR}/${ProjectName}_a CONFIG)
-
-        if(FindInPath_FOUND)
-            AddPathToPrefix(${${ProjectName}_INSTALL_DIR}/${ProjectName})
-            AddPathToPrefix(${${ProjectName}_INSTALL_DIR}/${ProjectName}_a)
-            return()
-        endif()
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
     endif()
 
     if(IMPORT_PROJECT_STATIC)
@@ -380,10 +375,8 @@ FUNCTION(ImportSQLITE3)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
-    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR}/${ProjectName} CONFIG REQUIRED)
-    FindInPath(${ProjectName}_a ${${ProjectName}_INSTALL_DIR}/${ProjectName}_a CONFIG REQUIRED)
-    AddPathToPrefix(${${ProjectName}_INSTALL_DIR}/${ProjectName})
-    AddPathToPrefix(${${ProjectName}_INSTALL_DIR}/${ProjectName}_a)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSQLITE3)
 
 FUNCTION(ImportLIBUV)
@@ -1283,6 +1276,41 @@ FUNCTION(ImportSQLPP23)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSQLPP23)
 
+FUNCTION(ImportSOCI)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:SOCI/soci.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/SOCI/soci.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    # message( STATUS ${OCMAKEUTIL_PROJECTS_PATH}/soci-config.cmake.in)
+    # message( FATAL_ERROR ${${ProjectName}_INSTALL_DIR}/src/${ProjectName}/soci-config.cmake.in)
+    file(COPY_FILE ${OCMAKEUTIL_PROJECTS_PATH}/soci-config.cmake.in ${${ProjectName}_INSTALL_DIR}/src/${ProjectName}/soci-config.cmake.in)
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportSOCI)
+
 FUNCTION(ImportDirectXTex)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
@@ -1405,7 +1433,6 @@ FUNCTION(ImportSTEAMDATAPP)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSTEAMDATAPP)
 
-
 FUNCTION(ImportValveFileVDF)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
@@ -1425,7 +1452,7 @@ FUNCTION(ImportValveFileVDF)
         set(GIT_REPOSITORY "https://github.com/TinyTinni/ValveFileVDF.git")
     endif()
 
-    #header only
+    # header only
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/project_without_option.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
