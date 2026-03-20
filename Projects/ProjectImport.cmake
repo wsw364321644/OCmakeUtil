@@ -1300,10 +1300,6 @@ FUNCTION(ImportSOCI)
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
-
-    # message( STATUS ${OCMAKEUTIL_PROJECTS_PATH}/soci-config.cmake.in)
-    # message( FATAL_ERROR ${${ProjectName}_INSTALL_DIR}/src/${ProjectName}/soci-config.cmake.in)
-    file(COPY_FILE ${OCMAKEUTIL_PROJECTS_PATH}/soci-config.cmake.in ${${ProjectName}_INSTALL_DIR}/src/${ProjectName}/soci-config.cmake.in)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
