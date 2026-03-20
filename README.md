@@ -2,11 +2,27 @@
 afford cmake help function to build project convenience.
 ## Import External Project
 ```
-  ImportProject(ZLIB STATIC ${STATIC_CRT} ${SSH} FIND TAG v1.3.2)
-  ImportProject(OpenSSL STATIC ${STATIC_CRT} ${SSH} FIND TAG openssl-3.6.1)
-  ImportProject(SQLite3 ${STATIC_CRT} URL https://sqlite.org/2026/sqlite-amalgamation-3510300.zip)
-  ImportProject(libuv ${STATIC_CRT} ${SSH} TAG v1.52.1)
-  ImportProject(CURL ${STATIC_CRT} STATIC ${SSH} TAG curl-8_18_0)
+set(PROJECT_STATIC_CRT OFF)
+
+if(PROJECT_STATIC_CRT)
+  set(STATIC_CRT STATIC_CRT)
+else()
+  unset(STATIC_CRT)
+endif()
+
+set(GIT_SSH OFF)
+
+if(GIT_SSH)
+  set(SSH SSH)
+else()
+  unset(SSH)
+endif()
+
+ImportProject(ZLIB STATIC ${STATIC_CRT} ${SSH} FIND TAG v1.3.2)
+ImportProject(OpenSSL STATIC ${STATIC_CRT} ${SSH} FIND TAG openssl-3.6.1)
+ImportProject(SQLite3 ${STATIC_CRT} URL https://sqlite.org/2026/sqlite-amalgamation-3510300.zip)
+ImportProject(libuv ${STATIC_CRT} ${SSH} TAG v1.52.1)
+ImportProject(CURL ${STATIC_CRT} STATIC ${SSH} TAG curl-8_18_0)
 ```
 ## Define Libarary
 ```
