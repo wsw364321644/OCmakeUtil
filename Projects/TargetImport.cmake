@@ -33,8 +33,8 @@ FUNCTION(ImportTarget TargetName)
         Importbetterenums()
     elseif(TargetName STREQUAL "ValveFileVDF")
         ImportValveFileVDF()
-    elseif(TargetName STREQUAL "RapidJSON")
-        ImportRapidJSON()
+    # elseif(TargetName STREQUAL "RapidJSON")
+    #     ImportRapidJSON()
     else()
         message(STATUS "no target ${TargetName} to import")
     endif()
@@ -499,37 +499,37 @@ FUNCTION(ImportValveFileVDF)
     ExportFromInstall(${TARGET_NAME})
 ENDFUNCTION(ImportValveFileVDF)
 
-FUNCTION(ImportRapidJSON)
-    if(TARGET ${TargetName})
-        return()
-    endif()
+# FUNCTION(ImportRapidJSON)
+#     if(TARGET ${TargetName})
+#         return()
+#     endif()
 
-    if(NOT IMPORT_PROJECT_TAG)
-        message(SEND_ERROR "missing PROJECT_TAG")
-    endif()
+#     if(NOT IMPORT_PROJECT_TAG)
+#         message(SEND_ERROR "missing PROJECT_TAG")
+#     endif()
 
-    if(IMPORT_PROJECT_SSH)
-        set(GIT_REPOSITORY "git@github.com:Tencent/rapidjson.git")
-    else()
-        set(GIT_REPOSITORY "https://github.com/Tencent/rapidjson.git")
-    endif()
+#     if(IMPORT_PROJECT_SSH)
+#         set(GIT_REPOSITORY "git@github.com:Tencent/rapidjson.git")
+#     else()
+#         set(GIT_REPOSITORY "https://github.com/Tencent/rapidjson.git")
+#     endif()
 
-    string(TOLOWER "${TargetName}_git" TargetGitName)
-    FetchContent_Declare(
-        ${TargetGitName}
-        GIT_REPOSITORY ${GIT_REPOSITORY}
-        GIT_TAG ${IMPORT_PROJECT_TAG}
-        GIT_SHALLOW ${GIT_SHALLOW_VAL}
-        GIT_SUBMODULES ""
-        SOURCE_SUBDIR "avoid_add_subdirectory"
-    )
-    FetchContent_MakeAvailable(${TargetGitName})
-    FetchContent_GetProperties(${TargetGitName})
-    NewTargetSource()
-    AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
-    add_library(${TargetName} INTERFACE)
-    add_library(${TargetName}::${TargetName} ALIAS ${TargetName})
-    AddTargetInclude(${TargetName})
-    AddTargetInstall(${TargetName} ${TargetName})
-    ExportFromInstall(${TargetName})
-ENDFUNCTION(ImportRapidJSON)
+#     string(TOLOWER "${TargetName}_git" TargetGitName)
+#     FetchContent_Declare(
+#         ${TargetGitName}
+#         GIT_REPOSITORY ${GIT_REPOSITORY}
+#         GIT_TAG ${IMPORT_PROJECT_TAG}
+#         GIT_SHALLOW ${GIT_SHALLOW_VAL}
+#         GIT_SUBMODULES ""
+#         SOURCE_SUBDIR "avoid_add_subdirectory"
+#     )
+#     FetchContent_MakeAvailable(${TargetGitName})
+#     FetchContent_GetProperties(${TargetGitName})
+#     NewTargetSource()
+#     AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
+#     add_library(${TargetName} INTERFACE)
+#     add_library(${TargetName}::${TargetName} ALIAS ${TargetName})
+#     AddTargetInclude(${TargetName})
+#     AddTargetInstall(${TargetName} ${TargetName})
+#     ExportFromInstall(${TargetName})
+# ENDFUNCTION(ImportRapidJSON)

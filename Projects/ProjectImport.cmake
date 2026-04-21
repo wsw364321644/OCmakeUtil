@@ -42,6 +42,10 @@ FUNCTION(PostImportProject)
 
     if(ProjectName STREQUAL "TBB")
         target_compile_definitions(TBB::tbb INTERFACE -D__TBB_BUILD=1)
+    elseif(ProjectName STREQUAL "tomlplusplus")
+        target_compile_definitions(tomlplusplus::tomlplusplus INTERFACE -DTOML_ENABLE_UNRELEASED_FEATURES=1)
+    elseif(ProjectName STREQUAL "RapidJSON")
+        # add_library(RapidJSON::RapidJSON ALIAS RapidJSON)
     endif()
 ENDFUNCTION(PostImportProject)
 
@@ -119,6 +123,8 @@ FUNCTION(ImportProject ProjectName)
             ImportSPDLOG()
         elseif(ProjectName STREQUAL "concurrentqueue")
             ImportCONCURRENTQUEUE()
+        elseif(ProjectName STREQUAL "PalSigslot")
+            ImportPalSigslot()
         elseif(ProjectName STREQUAL "ZLIB")
             ImportZLIB()
         elseif(ProjectName STREQUAL "CURL")
@@ -191,6 +197,10 @@ FUNCTION(ImportProject ProjectName)
             ImportLazyImporter()
         elseif(ProjectName STREQUAL "cxxopts")
             Importcxxopts()
+        elseif(ProjectName STREQUAL "tomlplusplus")
+            Importtomlplusplus()
+        elseif(ProjectName STREQUAL "magic_enum")
+            Importmagic_enum()
         else()
             message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
@@ -268,6 +278,35 @@ FUNCTION(ImportCONCURRENTQUEUE)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportCONCURRENTQUEUE)
+
+FUNCTION(ImportPalSigslot)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing sigslot tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:palacaze/sigslot.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/palacaze/sigslot.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportPalSigslot)
 
 FUNCTION(ImportZLIB)
     if(IMPORT_PROJECT_STATIC)
@@ -1247,6 +1286,20 @@ FUNCTION(ImportRAPIDJSON)
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
+    # delete RapidJSON_DIR
+    file(READ "${${ProjectName}_INSTALL_DIR}/cmake/RapidJSONConfig.cmake" FILE_CONTENT)
+    string(REGEX REPLACE "[^\r\n]*RapidJSON_DIR[^\r\n]*(\r?\n|\r)?" "" FILE_CONTENT "${FILE_CONTENT}")
+    string(REGEX MATCH "[^\r\n]*endif()[^\r\n]*(\r?\n|\r)?" ADD_LIBRARY_CONTENT "${FILE_CONTENT}")
+    string(APPEND ADD_LIBRARY_CONTENT 
+    [[
+if(NOT TARGET RapidJSON::RapidJSON)
+  add_library(RapidJSON::RapidJSON ALIAS RapidJSON)
+endif()
+    ]] 
+    )
+    string(REGEX REPLACE "[^\r\n]*endif()[^\r\n]*(\r?\n|\r)?" "${ADD_LIBRARY_CONTENT}" FILE_CONTENT "${FILE_CONTENT}")
+    file(WRITE "${${ProjectName}_INSTALL_DIR}/cmake/RapidJSONConfig.cmake" "${FILE_CONTENT}")
+
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportRAPIDJSON)
@@ -1463,7 +1516,6 @@ FUNCTION(ImportValveFileVDF)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportValveFileVDF)
 
-
 FUNCTION(ImportLazyImporter)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
@@ -1494,7 +1546,6 @@ FUNCTION(ImportLazyImporter)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportLazyImporter)
 
-
 FUNCTION(Importcxxopts)
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
@@ -1515,10 +1566,10 @@ FUNCTION(Importcxxopts)
     endif()
 
     set(EXTERNALPROJECT_OPTION_EX
-      -DCXXOPTS_BUILD_TESTS:bool=OFF
-      -DCXXOPTS_BUILD_EXAMPLES:bool=OFF
+        -DCXXOPTS_BUILD_TESTS:bool=OFF
+        -DCXXOPTS_BUILD_EXAMPLES:bool=OFF
     )
-    
+
     # header only
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
@@ -1529,3 +1580,68 @@ FUNCTION(Importcxxopts)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(Importcxxopts)
+
+FUNCTION(Importtomlplusplus)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:marzer/tomlplusplus.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/marzer/tomlplusplus.git")
+    endif()
+
+    # header only
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(Importtomlplusplus)
+
+FUNCTION(Importmagic_enum)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:Neargye/magic_enum.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/Neargye/magic_enum.git")
+    endif()
+
+    set(EXTERNALPROJECT_OPTION_EX
+        -DMAGIC_ENUM_OPT_BUILD_EXAMPLES:bool=OFF
+        -DMAGIC_ENUM_OPT_BUILD_TESTS:bool=OFF
+    )
+
+    # header only
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(Importmagic_enum)
