@@ -201,6 +201,8 @@ FUNCTION(ImportProject ProjectName)
             Importtomlplusplus()
         elseif(ProjectName STREQUAL "magic_enum")
             Importmagic_enum()
+        elseif(ProjectName STREQUAL "Glob")
+            ImportGlob()
         else()
             message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
@@ -1645,3 +1647,33 @@ FUNCTION(Importmagic_enum)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(Importmagic_enum)
+
+FUNCTION(ImportGlob)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:p-ranav/glob.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/p-ranav/glob.git")
+    endif()
+
+    # header only
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(ImportGlob)

@@ -1,0 +1,48 @@
+cmake_minimum_required(VERSION 3.25)
+include(FetchContent)
+include(ExternalProject)
+include(CMakePackageConfigHelpers)
+set(FETCHCONTENT_QUIET FALSE)
+
+set(OCMAKEUTIL_PROJECTS_PATH @OCMAKEUTIL_PROJECTS_PATH@)
+set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
+set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
+set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
+set(ProjectName_Lower @ProjectName_Lower@)
+set(ProjectName @ProjectName@)
+
+include(ProjectDefinition)
+
+project(${ProjectName})
+enable_language(CXX)
+include(GNUInstallDirs)
+
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX
+        "${CMAKE_BINARY_DIR}/${ProjectName_Lower}-prefix"
+        CACHE STRING "Directory to install after building" FORCE)
+endif()
+
+FetchContent_Declare(download_${ProjectName_Lower}
+  GIT_REPOSITORY @GIT_REPOSITORY@
+  GIT_TAG @IMPORT_PROJECT_TAG@
+  SOURCE_SUBDIR "avoid_add_subdirectory"
+)
+
+
+FetchContent_MakeAvailable(download_${ProjectName_Lower})
+FetchContent_GetProperties(download_${ProjectName_Lower}
+    SOURCE_DIR download_${ProjectName_Lower}_SOURCE_DIR
+)
+
+NewTargetSource()
+AddSourceFolder(INCLUDE RECURSE INTERFACE "${download_${ProjectName_Lower}_SOURCE_DIR}/single_include")
+
+set(TARGET_NAME Glob)
+add_library(${TARGET_NAME} INTERFACE)
+add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+AddTargetInclude(${TARGET_NAME})
+AddTargetInstall(${TARGET_NAME} ${PROJECT_NAME})
+
+ExportFromInstall(${PROJECT_NAME})
