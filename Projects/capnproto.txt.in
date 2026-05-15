@@ -13,9 +13,9 @@ else()
 endif()
 
 if(IMPORT_PROJECT_STATIC_CRT)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
 ExternalProject_Add(capnproto
@@ -29,4 +29,5 @@ ExternalProject_Add(capnproto
   -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
   -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
   -DCMAKE_DEBUG_POSTFIX:STRING=d
+  -DZLIB_USE_STATIC_LIBS:BOOL=${IMPORT_PROJECT_STATIC}
 )

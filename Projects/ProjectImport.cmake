@@ -65,6 +65,10 @@ FUNCTION(ImportProject ProjectName)
 
     if(IMPORT_PROJECT_STATIC)
         set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_STATIC")
+
+        if(ProjectName STREQUAL "ZLIB")
+            set(ZLIB_USE_STATIC_LIBS "ON" PARENT_SCOPE)
+        endif()
     endif()
 
     if(NOT IMPORT_PROJECT_BIT)
@@ -311,10 +315,6 @@ FUNCTION(ImportPalSigslot)
 ENDFUNCTION(ImportPalSigslot)
 
 FUNCTION(ImportZLIB)
-    if(IMPORT_PROJECT_STATIC)
-        set(ZLIB_USE_STATIC_LIBS "ON" PARENT_SCOPE)
-    endif()
-
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1292,12 +1292,12 @@ FUNCTION(ImportRAPIDJSON)
     file(READ "${${ProjectName}_INSTALL_DIR}/cmake/RapidJSONConfig.cmake" FILE_CONTENT)
     string(REGEX REPLACE "[^\r\n]*RapidJSON_DIR[^\r\n]*(\r?\n|\r)?" "" FILE_CONTENT "${FILE_CONTENT}")
     string(REGEX MATCH "[^\r\n]*endif()[^\r\n]*(\r?\n|\r)?" ADD_LIBRARY_CONTENT "${FILE_CONTENT}")
-    string(APPEND ADD_LIBRARY_CONTENT 
-    [[
+    string(APPEND ADD_LIBRARY_CONTENT
+        [[
 if(NOT TARGET RapidJSON::RapidJSON)
   add_library(RapidJSON::RapidJSON ALIAS RapidJSON)
 endif()
-    ]] 
+    ]]
     )
     string(REGEX REPLACE "[^\r\n]*endif()[^\r\n]*(\r?\n|\r)?" "${ADD_LIBRARY_CONTENT}" FILE_CONTENT "${FILE_CONTENT}")
     file(WRITE "${${ProjectName}_INSTALL_DIR}/cmake/RapidJSONConfig.cmake" "${FILE_CONTENT}")
