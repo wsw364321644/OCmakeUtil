@@ -67,7 +67,7 @@ FUNCTION(ImportProject ProjectName)
         set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_STATIC")
 
         if(ProjectName STREQUAL "ZLIB")
-            set(ZLIB_USE_STATIC_LIBS "ON" PARENT_SCOPE)
+            set(ZLIB_USE_STATIC_LIBS ON CACHE BOOL "" FORCE)
         endif()
     endif()
 
