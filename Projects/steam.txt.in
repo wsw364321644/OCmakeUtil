@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.24)
+include(FetchContent)
+project(project_steam)
+set(FETCHCONTENT_QUIET OFF)
+set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
+set(OCMAKEUTIL_PATH @OCMAKEUTIL_PATH@)
+
+FetchContent_Declare(steam
+  GIT_REPOSITORY @GIT_REPOSITORY@
+  GIT_TAG @IMPORT_PROJECT_TAG@
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(steam)
+FetchContent_GetProperties(steam
+  SOURCE_DIR steam_SOURCE_DIR
+)

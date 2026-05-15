@@ -87,13 +87,12 @@ FUNCTION(ImportProject ProjectName)
 
     string(TOLOWER ${ProjectName} ProjectName_Lower)
 
-    if(IMPORT_PROJECT_EXTERNAL_DIR)
-        set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
-    else()
-        set(WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/../external/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
-        cmake_path(NORMAL_PATH WORKING_DIRECTORY)
+    if(NOT IMPORT_PROJECT_EXTERNAL_DIR)
+        set(IMPORT_PROJECT_EXTERNAL_DIR ${CMAKE_BINARY_DIR}/../external)
+        cmake_path(NORMAL_PATH IMPORT_PROJECT_EXTERNAL_DIR)
     endif()
 
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX})
     set(INSTALL_DIRECTORY ${WORKING_DIRECTORY}/install)
 
     list(APPEND CMAKE_GENERATOR_ARGV "-G")
@@ -1085,23 +1084,33 @@ FUNCTION(ImportMINIZIP)
 ENDFUNCTION(ImportMINIZIP)
 
 FUNCTION(ImportSTEAM)
-    FetchContent_Declare(download_steam
-        URL ${IMPORT_PROJECT_URL}
-        DOWNLOAD_NO_EXTRACT false
-        DOWNLOAD_EXTRACT_TIMESTAMP false
-    )
-    FetchContent_MakeAvailable(download_steam)
-    FetchContent_GetProperties(download_steam
-        SOURCE_DIR download_steam_SOURCE_DIR
-    )
-    set(${ProjectName}_INSTALL_DIR ${download_steam_SOURCE_DIR})
-    set(${ProjectName}_ROOT ${${ProjectName}_INSTALL_DIR} CACHE STRING "steam root dir")
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/_deps/steam-src)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-    if(IMPORT_PROJECT_FIND)
-        find_package(${ProjectName} REQUIRED)
-    else()
-        find_package(${ProjectName})
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
     endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        set(IMPORT_PROJECT_TAG main)
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:rlabrecque/SteamworksSDK.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/rlabrecque/SteamworksSDK.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportSTEAM)
 
 FUNCTION(ImportCPUID)
