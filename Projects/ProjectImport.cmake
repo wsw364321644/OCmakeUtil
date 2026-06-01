@@ -256,6 +256,7 @@ FUNCTION(ImportSPDLOG)
 ENDFUNCTION(ImportSPDLOG)
 
 FUNCTION(ImportCONCURRENTQUEUE)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -285,6 +286,7 @@ FUNCTION(ImportCONCURRENTQUEUE)
 ENDFUNCTION(ImportCONCURRENTQUEUE)
 
 FUNCTION(ImportPalSigslot)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -460,6 +462,7 @@ FUNCTION(ImportLIBUV)
 ENDFUNCTION(ImportLIBUV)
 
 FUNCTION(ImportDETOURS)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower})
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -670,6 +673,7 @@ FUNCTION(ImportMbedTLS)
 ENDFUNCTION(ImportMbedTLS)
 
 FUNCTION(ImportGLEW)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -703,6 +707,7 @@ FUNCTION(ImportGLEW)
 ENDFUNCTION(ImportGLEW)
 
 FUNCTION(ImportRAPIDFUZZ)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -972,6 +977,8 @@ FUNCTION(ImportFOLLY)
 
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
 
@@ -980,6 +987,7 @@ FUNCTION(ImportFOLLY)
 ENDFUNCTION(ImportFOLLY)
 
 FUNCTION(ImportTBB)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1273,6 +1281,7 @@ FUNCTION(ImportSIMDJSON)
 ENDFUNCTION(ImportSIMDJSON)
 
 FUNCTION(ImportRAPIDJSON)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1316,6 +1325,7 @@ endif()
 ENDFUNCTION(ImportRAPIDJSON)
 
 FUNCTION(ImportSQLPP23)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1396,6 +1406,8 @@ FUNCTION(ImportDirectXTex)
 
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
     execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
     execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
         WORKING_DIRECTORY ${WORKING_DIRECTORY})
@@ -1498,6 +1510,7 @@ FUNCTION(ImportSTEAMDATAPP)
 ENDFUNCTION(ImportSTEAMDATAPP)
 
 FUNCTION(ImportValveFileVDF)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1528,6 +1541,7 @@ FUNCTION(ImportValveFileVDF)
 ENDFUNCTION(ImportValveFileVDF)
 
 FUNCTION(ImportLazyImporter)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1558,6 +1572,7 @@ FUNCTION(ImportLazyImporter)
 ENDFUNCTION(ImportLazyImporter)
 
 FUNCTION(Importcxxopts)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1593,6 +1608,7 @@ FUNCTION(Importcxxopts)
 ENDFUNCTION(Importcxxopts)
 
 FUNCTION(Importtomlplusplus)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1623,6 +1639,7 @@ FUNCTION(Importtomlplusplus)
 ENDFUNCTION(Importtomlplusplus)
 
 FUNCTION(Importmagic_enum)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1658,6 +1675,7 @@ FUNCTION(Importmagic_enum)
 ENDFUNCTION(Importmagic_enum)
 
 FUNCTION(ImportGlob)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
