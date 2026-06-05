@@ -206,6 +206,10 @@ FUNCTION(ImportProject ProjectName)
             Importmagic_enum()
         elseif(ProjectName STREQUAL "Glob")
             ImportGlob()
+        elseif(ProjectName STREQUAL "taskflow")
+            Importtaskflow()
+        elseif(ProjectName STREQUAL "ctre")
+            Importctre()
         else()
             message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
@@ -1592,8 +1596,8 @@ FUNCTION(Importcxxopts)
     endif()
 
     set(EXTERNALPROJECT_OPTION_EX
-        -DCXXOPTS_BUILD_TESTS:bool=OFF
-        -DCXXOPTS_BUILD_EXAMPLES:bool=OFF
+        -DCXXOPTS_BUILD_TESTS:BOOL=OFF
+        -DCXXOPTS_BUILD_EXAMPLES:BOOL=OFF
     )
 
     # header only
@@ -1704,3 +1708,72 @@ FUNCTION(ImportGlob)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportGlob)
+
+FUNCTION(Importtaskflow)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:taskflow/taskflow.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/taskflow/taskflow.git")
+    endif()
+
+    set(EXTERNALPROJECT_OPTION_EX
+        -DTF_BUILD_TESTS:BOOL=OFF
+        -DTF_BUILD_EXAMPLES:BOOL=OFF
+        -DTF_BUILD_PROFILER:BOOL=OFF
+        -DTF_BUILD_BENCHMARKS:BOOL=OFF
+    )
+
+    # header only
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(Importtaskflow)
+
+FUNCTION(Importctre)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        message(SEND_ERROR "missing tag")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:hanickadot/compile-time-regular-expressions.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/hanickadot/compile-time-regular-expressions.git")
+    endif()
+
+    # header only
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(Importctre)
