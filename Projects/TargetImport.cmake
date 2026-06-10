@@ -21,9 +21,8 @@ FUNCTION(ImportTarget TargetName)
         endif()
     endif()
 
-    if(TargetName STREQUAL "inih")
-        Importinih()
-    elseif(TargetName STREQUAL "imgui")
+
+    if(TargetName STREQUAL "imgui")
         Importimgui()
     elseif(TargetName STREQUAL "mpack")
         Importmpack()
@@ -31,139 +30,141 @@ FUNCTION(ImportTarget TargetName)
         Importrollinghashcpp()
     elseif(TargetName STREQUAL "better-enums")
         Importbetterenums()
-    elseif(TargetName STREQUAL "ValveFileVDF")
-        ImportValveFileVDF()
-    # elseif(TargetName STREQUAL "RapidJSON")
-    #     ImportRapidJSON()
+        # elseif(TargetName STREQUAL "inih")
+        #     Importinih()
+        #elseif(TargetName STREQUAL "ValveFileVDF")
+        #    ImportValveFileVDF()
+        # elseif(TargetName STREQUAL "RapidJSON")
+        #     ImportRapidJSON()
     else()
-        message(STATUS "no target ${TargetName} to import")
+        message(SEND_ERROR "no target ${TargetName} to import")
     endif()
 ENDFUNCTION(ImportTarget)
 
-FUNCTION(Importinih)
-    set(TARGET_NAME inih)
-    set(PACKAGE_NAME ${TARGET_NAME})
+# FUNCTION(Importinih)
+#     set(TARGET_NAME inih)
+#     set(PACKAGE_NAME ${TARGET_NAME})
 
-    if(TARGET ${TARGET_NAME})
-        return()
-    endif()
+#     if(TARGET ${TARGET_NAME})
+#         return()
+#     endif()
 
-    if(NOT IMPORT_PROJECT_TAG)
-        set(IMPORT_PROJECT_TAG "5cc5e2c24642513aaa5b19126aad42d0e4e0923e") # r58
-        message(SEND_ERROR "missing PROJECT_TAG")
-    endif()
+#     if(NOT IMPORT_PROJECT_TAG)
+#         set(IMPORT_PROJECT_TAG "5cc5e2c24642513aaa5b19126aad42d0e4e0923e") # r58
+#         message(SEND_ERROR "missing PROJECT_TAG")
+#     endif()
 
-    if(IMPORT_PROJECT_SSH)
-        set(GIT_REPOSITORY "git@github.com:benhoyt/inih.git")
-    else()
-        set(GIT_REPOSITORY "https://github.com/benhoyt/inih.git")
-    endif()
+#     if(IMPORT_PROJECT_SSH)
+#         set(GIT_REPOSITORY "git@github.com:benhoyt/inih.git")
+#     else()
+#         set(GIT_REPOSITORY "https://github.com/benhoyt/inih.git")
+#     endif()
 
-    FetchContent_Declare(
-        inih
-        GIT_REPOSITORY ${GIT_REPOSITORY}
-        GIT_TAG ${IMPORT_PROJECT_TAG}
-        GIT_SHALLOW ${GIT_SHALLOW_VAL}
-    )
-    FetchContent_MakeAvailable(inih)
-    FetchContent_GetProperties(inih)
+#     FetchContent_Declare(
+#         inih
+#         GIT_REPOSITORY ${GIT_REPOSITORY}
+#         GIT_TAG ${IMPORT_PROJECT_TAG}
+#         GIT_SHALLOW ${GIT_SHALLOW_VAL}
+#     )
+#     FetchContent_MakeAvailable(inih)
+#     FetchContent_GetProperties(inih)
 
-    set(SourceFiles "")
-    list(APPEND SourceFiles
-        ${inih_SOURCE_DIR}/ini.c
-    )
+#     set(SourceFiles "")
+#     list(APPEND SourceFiles
+#         ${inih_SOURCE_DIR}/ini.c
+#     )
 
-    function(add_inih TARGET_NAME)
-        target_sources(
-            ${TARGET_NAME}
-            PRIVATE
-            ${SourceFiles}
-            PUBLIC
-            FILE_SET HEADERS
-            BASE_DIRS ${inih_SOURCE_DIR}
-            FILES
-            $<BUILD_INTERFACE:${inih_SOURCE_DIR}/ini.h>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ini.h>
-        )
-        install(TARGETS ${TARGET_NAME}
-            EXPORT ${TARGET_NAME}Targets
-            LIBRARY DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
-            RUNTIME DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_BINDIR}
-            PUBLIC_HEADER DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
-            FILE_SET HEADERS
-            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
-        )
+#     function(add_inih TARGET_NAME)
+#         target_sources(
+#             ${TARGET_NAME}
+#             PRIVATE
+#             ${SourceFiles}
+#             PUBLIC
+#             FILE_SET HEADERS
+#             BASE_DIRS ${inih_SOURCE_DIR}
+#             FILES
+#             $<BUILD_INTERFACE:${inih_SOURCE_DIR}/ini.h>
+#             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ini.h>
+#         )
+#         install(TARGETS ${TARGET_NAME}
+#             EXPORT ${TARGET_NAME}Targets
+#             LIBRARY DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
+#             ARCHIVE DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}
+#             RUNTIME DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_BINDIR}
+#             PUBLIC_HEADER DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+#             FILE_SET HEADERS
+#             DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_INCLUDEDIR}
+#         )
 
-        install(EXPORT ${TARGET_NAME}Targets
-            FILE ${TARGET_NAME}Targets.cmake
-            NAMESPACE inih::
-            DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
-        )
-    endfunction()
+#         install(EXPORT ${TARGET_NAME}Targets
+#             FILE ${TARGET_NAME}Targets.cmake
+#             NAMESPACE inih::
+#             DESTINATION ${TARGET_NAME}/${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+#         )
+#     endfunction()
 
-    add_library(${TARGET_NAME} SHARED)
-    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-    target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
-    target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
-    set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
-    set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
-    add_inih(${TARGET_NAME})
+#     add_library(${TARGET_NAME} SHARED)
+#     add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+#     target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
+#     target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
+#     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
+#     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
+#     add_inih(${TARGET_NAME})
 
-    set(TARGET_NAME ${TARGET_NAME}_a)
-    add_library(${TARGET_NAME} STATIC)
-    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-    set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
-    set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
-    add_inih(${TARGET_NAME})
+#     set(TARGET_NAME ${TARGET_NAME}_a)
+#     add_library(${TARGET_NAME} STATIC)
+#     add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+#     set_target_properties(${TARGET_NAME} PROPERTIES CXX_STANDARD_REQUIRED OFF)
+#     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
+#     add_inih(${TARGET_NAME})
 
-    list(APPEND SourceFiles
-        ${inih_SOURCE_DIR}/cpp/INIReader.cpp
-    )
+#     list(APPEND SourceFiles
+#         ${inih_SOURCE_DIR}/cpp/INIReader.cpp
+#     )
 
-    function(add_inihpp TARGET_NAME)
-        target_sources(
-            ${TARGET_NAME}
-            PRIVATE
-            ${SourceFiles}
-            PUBLIC
-            FILE_SET HEADERS
-            BASE_DIRS ${inih_SOURCE_DIR}
-            FILES
-            $<BUILD_INTERFACE:${inih_SOURCE_DIR}/ini.h>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ini.h>
-            $<BUILD_INTERFACE:${inih_SOURCE_DIR}/cpp/INIReader.h>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cpp/INIReader.h>
-        )
-        install(TARGETS ${TARGET_NAME}
-            EXPORT ${TARGET_NAME}Targets
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-            FILE_SET HEADERS
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        )
+#     function(add_inihpp TARGET_NAME)
+#         target_sources(
+#             ${TARGET_NAME}
+#             PRIVATE
+#             ${SourceFiles}
+#             PUBLIC
+#             FILE_SET HEADERS
+#             BASE_DIRS ${inih_SOURCE_DIR}
+#             FILES
+#             $<BUILD_INTERFACE:${inih_SOURCE_DIR}/ini.h>
+#             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ini.h>
+#             $<BUILD_INTERFACE:${inih_SOURCE_DIR}/cpp/INIReader.h>
+#             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cpp/INIReader.h>
+#         )
+#         install(TARGETS ${TARGET_NAME}
+#             EXPORT ${TARGET_NAME}Targets
+#             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#             ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#             PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#             FILE_SET HEADERS
+#             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#         )
 
-        install(EXPORT ${TARGET_NAME}Targets
-            FILE ${TARGET_NAME}Targets.cmake
-            NAMESPACE inih::
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
-        )
-    endfunction()
+#         install(EXPORT ${TARGET_NAME}Targets
+#             FILE ${TARGET_NAME}Targets.cmake
+#             NAMESPACE inih::
+#             DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}
+#         )
+#     endfunction()
 
-    set(TARGET_NAME inihpp)
-    add_library(${TARGET_NAME} SHARED)
-    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-    target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
-    target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
-    add_inihpp(${TARGET_NAME})
+#     set(TARGET_NAME inihpp)
+#     add_library(${TARGET_NAME} SHARED)
+#     add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+#     target_compile_definitions(${TARGET_NAME} PUBLIC -DINI_SHARED_LIB)
+#     target_compile_definitions(${TARGET_NAME} PRIVATE -DINI_SHARED_LIB_BUILDING)
+#     add_inihpp(${TARGET_NAME})
 
-    set(TARGET_NAME ${TARGET_NAME}_a)
-    add_library(${TARGET_NAME} STATIC)
-    add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-    add_inihpp(${TARGET_NAME})
-ENDFUNCTION(Importinih)
+#     set(TARGET_NAME ${TARGET_NAME}_a)
+#     add_library(${TARGET_NAME} STATIC)
+#     add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+#     add_inihpp(${TARGET_NAME})
+# ENDFUNCTION(Importinih)
 
 FUNCTION(Importimgui)
     set(TARGET_NAME imgui_a)
@@ -463,41 +464,41 @@ FUNCTION(Importbetterenums)
     set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE C)
 ENDFUNCTION(Importbetterenums)
 
-FUNCTION(ImportValveFileVDF)
-    set(TARGET_NAME ValveFileVDF)
+# FUNCTION(ImportValveFileVDF)
+#     set(TARGET_NAME ValveFileVDF)
 
-    if(TARGET ${TARGET_NAME})
-        return()
-    endif()
+#     if(TARGET ${TARGET_NAME})
+#         return()
+#     endif()
 
-    if(NOT IMPORT_PROJECT_TAG)
-        message(SEND_ERROR "missing PROJECT_TAG")
-    endif()
+#     if(NOT IMPORT_PROJECT_TAG)
+#         message(SEND_ERROR "missing PROJECT_TAG")
+#     endif()
 
-    if(IMPORT_PROJECT_SSH)
-        set(GIT_REPOSITORY "git@github.com:TinyTinni/ValveFileVDF.git")
-    else()
-        set(GIT_REPOSITORY "https://github.com/TinyTinni/ValveFileVDF.git")
-    endif()
+#     if(IMPORT_PROJECT_SSH)
+#         set(GIT_REPOSITORY "git@github.com:TinyTinni/ValveFileVDF.git")
+#     else()
+#         set(GIT_REPOSITORY "https://github.com/TinyTinni/ValveFileVDF.git")
+#     endif()
 
-    string(TOLOWER "${TARGET_NAME}_git" TargetGitName)
-    FetchContent_Declare(
-        ${TargetGitName}
-        GIT_REPOSITORY ${GIT_REPOSITORY}
-        GIT_TAG ${IMPORT_PROJECT_TAG}
-        GIT_SHALLOW ${GIT_SHALLOW_VAL}
-        SOURCE_SUBDIR "avoid_add_subdirectory"
-    )
-    FetchContent_MakeAvailable(${TargetGitName})
-    FetchContent_GetProperties(${TargetGitName})
-    NewTargetSource()
-    AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
-    add_library(${TARGET_NAME} INTERFACE)
-    add_library(${TARGET_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-    AddTargetInclude(${TARGET_NAME})
-    AddTargetInstall(${TARGET_NAME} ${TARGET_NAME})
-    ExportFromInstall(${TARGET_NAME})
-ENDFUNCTION(ImportValveFileVDF)
+#     string(TOLOWER "${TARGET_NAME}_git" TargetGitName)
+#     FetchContent_Declare(
+#         ${TargetGitName}
+#         GIT_REPOSITORY ${GIT_REPOSITORY}
+#         GIT_TAG ${IMPORT_PROJECT_TAG}
+#         GIT_SHALLOW ${GIT_SHALLOW_VAL}
+#         SOURCE_SUBDIR "avoid_add_subdirectory"
+#     )
+#     FetchContent_MakeAvailable(${TargetGitName})
+#     FetchContent_GetProperties(${TargetGitName})
+#     NewTargetSource()
+#     AddSourceFolder(INCLUDE RECURSE PUBLIC "${${TargetGitName}_SOURCE_DIR}/include")
+#     add_library(${TARGET_NAME} INTERFACE)
+#     add_library(${TARGET_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+#     AddTargetInclude(${TARGET_NAME})
+#     AddTargetInstall(${TARGET_NAME} ${TARGET_NAME})
+#     ExportFromInstall(${TARGET_NAME})
+# ENDFUNCTION(ImportValveFileVDF)
 
 # FUNCTION(ImportRapidJSON)
 #     if(TARGET ${TargetName})

@@ -210,6 +210,8 @@ FUNCTION(ImportProject ProjectName)
             Importtaskflow()
         elseif(ProjectName STREQUAL "ctre")
             Importctre()
+        elseif(ProjectName STREQUAL "inih")
+            Importinih()
         else()
             message(FATAL_ERROR "no project ${ProjectName} to import")
         endif()
@@ -1524,7 +1526,7 @@ FUNCTION(ImportValveFileVDF)
     endif()
 
     if(NOT IMPORT_PROJECT_TAG)
-        message(SEND_ERROR "missing tag")
+        message(SEND_ERROR "missing tag (install fix after 9138f83d310fc3f656297f79a9b43d0a5d45cd4e)")
     endif()
 
     if(IMPORT_PROJECT_SSH)
@@ -1777,3 +1779,35 @@ FUNCTION(Importctre)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(Importctre)
+
+FUNCTION(Importinih)
+    set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+    if(FindInPath_FOUND)
+        AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+        return()
+    endif()
+
+    if(NOT IMPORT_PROJECT_TAG)
+        set(IMPORT_PROJECT_TAG "5cc5e2c24642513aaa5b19126aad42d0e4e0923e") # r58
+        message(SEND_ERROR "missing PROJECT_TAG")
+    endif()
+
+    if(IMPORT_PROJECT_SSH)
+        set(GIT_REPOSITORY "git@github.com:benhoyt/inih.git")
+    else()
+        set(GIT_REPOSITORY "https://github.com/benhoyt/inih.git")
+    endif()
+
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in ${WORKING_DIRECTORY}/CMakeLists.txt @ONLY)
+    execute_process(COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+        WORKING_DIRECTORY ${WORKING_DIRECTORY})
+
+    FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+    AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+ENDFUNCTION(Importinih)
