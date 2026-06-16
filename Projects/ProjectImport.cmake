@@ -88,7 +88,7 @@ FUNCTION(ImportProject ProjectName)
     string(TOLOWER ${ProjectName} ProjectName_Lower)
 
     if(NOT IMPORT_PROJECT_EXTERNAL_DIR)
-        set(IMPORT_PROJECT_EXTERNAL_DIR ${CMAKE_BINARY_DIR}/../external)
+        set(IMPORT_PROJECT_EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
         cmake_path(NORMAL_PATH IMPORT_PROJECT_EXTERNAL_DIR)
     endif()
 

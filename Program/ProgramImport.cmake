@@ -29,7 +29,13 @@ FUNCTION(ImportProgram ProgramName)
 
     string(TOLOWER ${ProgramName} ProgramName_Lower)
     string(TOUPPER ${ProgramName} ProgramName_Upper)
-    set(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/${ProgramName_Lower}${WORKING_DIRECTORY_SUFFIX})
+
+    if(NOT IMPORT_PROJECT_EXTERNAL_DIR)
+        set(IMPORT_PROJECT_EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
+        cmake_path(NORMAL_PATH IMPORT_PROJECT_EXTERNAL_DIR)
+    endif()
+
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProgramName_Lower}${WORKING_DIRECTORY_SUFFIX})
 
     if(ProgramName STREQUAL "NASM")
         include(CMakeDetermineASM_NASMCompiler)
