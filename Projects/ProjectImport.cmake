@@ -73,12 +73,7 @@ FUNCTION(ImportProject ProjectName)
 
     if(NOT IMPORT_PROJECT_BIT)
         MATH(EXPR IMPORT_PROJECT_BIT "${CMAKE_SIZEOF_VOID_P}*8")
-    endif()
-
-    if(IMPORT_PROJECT_BIT EQUAL 64)
-        set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_64")
-    else()
-        set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_32")
+        set(WORKING_DIRECTORY_SUFFIX "${WORKING_DIRECTORY_SUFFIX}_${IMPORT_PROJECT_BIT}")
     endif()
 
     if(IMPORT_PROJECT_TAG)
@@ -206,8 +201,8 @@ FUNCTION(ImportProject ProjectName)
             Importmagic_enum()
         elseif(ProjectName STREQUAL "Glob")
             ImportGlob()
-        elseif(ProjectName STREQUAL "taskflow")
-            Importtaskflow()
+        elseif(ProjectName STREQUAL "Taskflow")
+            ImportTaskflow()
         elseif(ProjectName STREQUAL "ctre")
             Importctre()
         elseif(ProjectName STREQUAL "inih")
@@ -262,7 +257,7 @@ FUNCTION(ImportSPDLOG)
 ENDFUNCTION(ImportSPDLOG)
 
 FUNCTION(ImportCONCURRENTQUEUE)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -292,7 +287,7 @@ FUNCTION(ImportCONCURRENTQUEUE)
 ENDFUNCTION(ImportCONCURRENTQUEUE)
 
 FUNCTION(ImportPalSigslot)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -468,7 +463,7 @@ FUNCTION(ImportLIBUV)
 ENDFUNCTION(ImportLIBUV)
 
 FUNCTION(ImportDETOURS)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower})
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -679,7 +674,7 @@ FUNCTION(ImportMbedTLS)
 ENDFUNCTION(ImportMbedTLS)
 
 FUNCTION(ImportGLEW)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -713,7 +708,7 @@ FUNCTION(ImportGLEW)
 ENDFUNCTION(ImportGLEW)
 
 FUNCTION(ImportRAPIDFUZZ)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -993,7 +988,7 @@ FUNCTION(ImportFOLLY)
 ENDFUNCTION(ImportFOLLY)
 
 FUNCTION(ImportTBB)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1287,7 +1282,7 @@ FUNCTION(ImportSIMDJSON)
 ENDFUNCTION(ImportSIMDJSON)
 
 FUNCTION(ImportRAPIDJSON)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1331,7 +1326,7 @@ endif()
 ENDFUNCTION(ImportRAPIDJSON)
 
 FUNCTION(ImportSQLPP23)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1516,7 +1511,7 @@ FUNCTION(ImportSTEAMDATAPP)
 ENDFUNCTION(ImportSTEAMDATAPP)
 
 FUNCTION(ImportValveFileVDF)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1547,7 +1542,7 @@ FUNCTION(ImportValveFileVDF)
 ENDFUNCTION(ImportValveFileVDF)
 
 FUNCTION(ImportLazyImporter)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1578,7 +1573,7 @@ FUNCTION(ImportLazyImporter)
 ENDFUNCTION(ImportLazyImporter)
 
 FUNCTION(Importcxxopts)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1614,7 +1609,7 @@ FUNCTION(Importcxxopts)
 ENDFUNCTION(Importcxxopts)
 
 FUNCTION(Importtomlplusplus)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1645,7 +1640,7 @@ FUNCTION(Importtomlplusplus)
 ENDFUNCTION(Importtomlplusplus)
 
 FUNCTION(Importmagic_enum)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1681,7 +1676,7 @@ FUNCTION(Importmagic_enum)
 ENDFUNCTION(Importmagic_enum)
 
 FUNCTION(ImportGlob)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1711,8 +1706,8 @@ FUNCTION(ImportGlob)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
 ENDFUNCTION(ImportGlob)
 
-FUNCTION(Importtaskflow)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+FUNCTION(ImportTaskflow)
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
@@ -1747,10 +1742,10 @@ FUNCTION(Importtaskflow)
 
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
     AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
-ENDFUNCTION(Importtaskflow)
+ENDFUNCTION(ImportTaskflow)
 
 FUNCTION(Importctre)
-    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower})
+    set(WORKING_DIRECTORY ${IMPORT_PROJECT_EXTERNAL_DIR}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT})
     set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
     FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
