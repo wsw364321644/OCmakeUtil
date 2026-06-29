@@ -2,9 +2,13 @@ cmake_minimum_required(VERSION 3.20)
 include(GNUInstallDirs)
 
 if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_LINK_LIBRARY_USING_delayload "/DELAYLOAD:\"<LIBRARY>\"" PARENT_SCOPE)
-    set(CMAKE_LINK_LIBRARY_USING_delayload_SUPPORTED TRUE PARENT_SCOPE)
+    set(CMAKE_LINK_LIBRARY_USING_delayload "/DELAYLOAD:\"<LIBRARY>\"" CACHE STRING "Link library using delayload")
+    set(CMAKE_LINK_LIBRARY_USING_delayload_SUPPORTED TRUE CACHE BOOL "Link library using delayload supported")
 endif()
+
+set(CONFIG_INSTALL_BINDIR "$<CONFIG>/${CMAKE_INSTALL_BINDIR}" CACHE STRING "Install directory for executables")
+set(CONFIG_INSTALL_LIBDIR "$<CONFIG>/${CMAKE_INSTALL_LIBDIR}" CACHE STRING "Install directory for libraries")
+set(CONFIG_INSTALL_INCLUDEDIR "$<CONFIG>/${CMAKE_INSTALL_INCLUDEDIR}" CACHE STRING "Install directory for headers")
 
 FUNCTION(TargetAddDelayLoad _TargetName _DllName)
     get_filename_component(FILE_SUFFIX "${_DllName}" EXT)
@@ -137,7 +141,7 @@ macro(AddSourceFolder)
                 OUTPUT_VARIABLE IncludeFileRelativePath
             )
             #cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
-            cmake_path(APPEND "$<CONFIG>" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
+            cmake_path(APPEND ${CONFIG_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
             list(APPEND PublicIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
             list(APPEND PublicIncludeFiles "$<INSTALL_INTERFACE:${IncludeFileInstallPath}>")
         endforeach()
@@ -163,7 +167,7 @@ macro(AddSourceFolder)
                 BASE_DIRECTORY ${SourceFolder}
                 OUTPUT_VARIABLE IncludeFileRelativePath)
             #cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
-            cmake_path(APPEND "$<CONFIG>" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
+            cmake_path(APPEND ${CMAKE_INSTCONFIG_INSTALL_INCLUDEDIRALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
             list(APPEND InterfaceIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
             list(APPEND InterfaceIncludeFiles "$<INSTALL_INTERFACE:${IncludeFileInstallPath}>")
         endforeach()
@@ -316,12 +320,12 @@ macro(AddTargetInstall TARGET_NAME EXPORT_NAME)
 
     install(TARGETS ${TARGET_NAME}
         EXPORT ${EXPORT_NAME}Targets
-        LIBRARY DESTINATION $<CONFIG>/${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION $<CONFIG>/${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION $<CONFIG>/${CMAKE_INSTALL_BINDIR}
-        PUBLIC_HEADER DESTINATION $<CONFIG>/${CMAKE_INSTALL_INCLUDEDIR}
+        LIBRARY DESTINATION ${CONFIG_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CONFIG_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CONFIG_INSTALL_BINDIR}
+        #PUBLIC_HEADER DESTINATION ${CONFIG_INSTALL_INCLUDEDIR}
         FILE_SET HEADERS
-        DESTINATION $<CONFIG>/${CMAKE_INSTALL_INCLUDEDIR}
+        DESTINATION ${CONFIG_INSTALL_INCLUDEDIR}
     )
 endmacro(AddTargetInstall)
 
@@ -333,17 +337,17 @@ macro(ExportFromInstall EXPORT_NAME)
     install(EXPORT ${EXPORT_NAME}Targets
         FILE ${EXPORT_NAME}Targets.cmake
         NAMESPACE ${TARGET_NAMESPACE}::
-        DESTINATION $<CONFIG>/${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
+        DESTINATION ${CONFIG_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
     )
 
     configure_package_config_file(
         ${OCMAKEUTIL_PROJECTS_PATH}/CommonConfig.cmake.in
         ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}Config.cmake
-        INSTALL_DESTINATION $<CONFIG>/${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+        INSTALL_DESTINATION ${CONFIG_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
     )
 
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}Config.cmake
-        DESTINATION $<CONFIG>/${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
+        DESTINATION ${CONFIG_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
     )
 
     if(DEFINED PROJECT_VERSION)
@@ -353,7 +357,7 @@ macro(ExportFromInstall EXPORT_NAME)
             COMPATIBILITY AnyNewerVersion)
 
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
-            DESTINATION $<CONFIG>/${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
+            DESTINATION ${CONFIG_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
         )
     endif()
 endmacro(ExportFromInstall)
