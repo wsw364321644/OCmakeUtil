@@ -50,8 +50,32 @@ function(PostImportProject)
 		target_compile_definitions(tomlplusplus::tomlplusplus
 			INTERFACE -DTOML_ENABLE_UNRELEASED_FEATURES=1
 		)
-	elseif(ProjectName STREQUAL "RapidJSON")
-		# add_library(RapidJSON::RapidJSON ALIAS RapidJSON)
+	elseif(ProjectName STREQUAL "LibArchive")
+		if(NOT TARGET LibArchive::LibArchive_new)
+			add_library(LibArchive_static_new INTERFACE)
+
+			target_link_libraries(LibArchive_static_new
+				INTERFACE LibArchive::LibArchive_static
+			)
+			target_compile_definitions(LibArchive_static_new
+				INTERFACE -DLIBARCHIVE_STATIC
+			)
+			add_library(LibArchive_new INTERFACE)
+			target_link_libraries(LibArchive_new
+				INTERFACE LibArchive::LibArchive
+			)
+			find_package(ZLIB)
+			if(ZLIB_FOUND)
+				target_link_libraries(LibArchive_static_new
+					INTERFACE ZLIB::ZLIB
+				)
+				target_link_libraries(LibArchive_new
+					INTERFACE ZLIB::ZLIB
+				)
+			endif()
+			add_library(LibArchive::LibArchive_new ALIAS LibArchive_new)
+			add_library(LibArchive::LibArchive_static_new ALIAS LibArchive_static_new)
+		endif()
 	endif()
 endfunction()
 
@@ -245,6 +269,8 @@ function(ImportProject ProjectName)
 			Importinih()
 		elseif(ProjectName STREQUAL "LibArchive")
 			ImportLibArchive()
+		elseif(ProjectName STREQUAL "wildmatch")
+			Importwildmatch()
 		else()
 			message(FATAL_ERROR "no project ${ProjectName} to import")
 		endif()
@@ -2516,6 +2542,46 @@ function(ImportLibArchive)
 	)
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} --build . --config Release
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+endfunction()
+
+function(Importwildmatch)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(FindInPath_FOUND)
+		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:davvid/wildmatch.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/davvid/wildmatch.git")
+	endif()
+
+	# header only
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 
