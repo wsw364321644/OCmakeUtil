@@ -50,6 +50,10 @@ function(PostImportProject)
 		target_compile_definitions(tomlplusplus::tomlplusplus
 			INTERFACE -DTOML_ENABLE_UNRELEASED_FEATURES=1
 		)
+	elseif(ProjectName STREQUAL "RapidJSON")
+		target_compile_definitions(RapidJSON
+			INTERFACE -DRAPIDJSON_HAS_STDSTRING=1
+		)
 	elseif(ProjectName STREQUAL "LibArchive")
 		if(NOT TARGET LibArchive::LibArchive_new)
 			add_library(LibArchive_static_new INTERFACE)
@@ -104,6 +108,7 @@ function(ImportProject ProjectName)
 
 		if(ProjectName STREQUAL "ZLIB")
 			set(ZLIB_USE_STATIC_LIBS ON CACHE BOOL "" FORCE)
+			set(SKIP_CONFIG TRUE)
 		endif()
 	endif()
 
@@ -122,29 +127,6 @@ function(ImportProject ProjectName)
 
 	string(TOLOWER ${ProjectName} ProjectName_Lower)
 
-	if(NOT IMPORT_PROJECT_EXTERNAL_DIR_CACHE)
-		if(IMPORT_PROJECT_EXTERNAL_DIR)
-			cmake_path(ABSOLUTE_PATH
-				IMPORT_PROJECT_EXTERNAL_DIR
-				BASE_DIRECTORY
-				${CMAKE_SOURCE_DIR}
-				NORMALIZE
-				OUTPUT_VARIABLE
-				IMPORT_PROJECT_EXTERNAL_DIR
-			)
-		else()
-			set(IMPORT_PROJECT_EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
-			cmake_path(NORMAL_PATH IMPORT_PROJECT_EXTERNAL_DIR)
-		endif()
-		set(
-			IMPORT_PROJECT_EXTERNAL_DIR_CACHE
-			${IMPORT_PROJECT_EXTERNAL_DIR}
-			CACHE
-				INTERNAL
-				""
-		)
-	endif()
-
 	set(WORKING_DIRECTORY
 		${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}/${ProjectName_Lower}${WORKING_DIRECTORY_SUFFIX}
 	)
@@ -159,11 +141,22 @@ function(ImportProject ProjectName)
 		list(APPEND CMAKE_GENERATOR_ARGV "${CMAKE_GENERATOR_PLATFORM}")
 	endif()
 
-	# set(CMAKE_FIND_DEBUG_MODE ON)
-	find_package(${ProjectName} CONFIG)
+	if(SKIP_CONFIG)
+		find_package(${ProjectName} MODULE)
+		# include(CMakePrintHelpers)
 
-	if(NOT ${ProjectName}_FOUND)
-		find_package(${ProjectName})
+		# cmake_print_properties(
+		# 	TARGETS
+		# 	ZLIB::ZLIB
+		# 	PROPERTIES
+		# 	IMPORTED_LOCATION_RELEASE
+		# )
+	else()
+		find_package(${ProjectName} CONFIG)
+
+		if(NOT ${ProjectName}_FOUND)
+			find_package(${ProjectName})
+		endif()
 	endif()
 
 	if(NOT ${ProjectName}_FOUND)
@@ -271,6 +264,8 @@ function(ImportProject ProjectName)
 			ImportLibArchive()
 		elseif(ProjectName STREQUAL "wildmatch")
 			Importwildmatch()
+		elseif(ProjectName STREQUAL "jwt-cpp")
+			Importjwtcpp()
 		else()
 			message(FATAL_ERROR "no project ${ProjectName} to import")
 		endif()
@@ -1532,11 +1527,20 @@ function(ImportProtobuf)
 		set(GIT_REPOSITORY "https://github.com/protocolbuffers/protobuf.git")
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-Dprotobuf_MSVC_STATIC_RUNTIME:BOOL=${IMPORT_PROJECT_STATIC_CRT}
+		-Dprotobuf_BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+		-Dprotobuf_BUILD_TESTS:BOOL=OFF
+		-Dprotobuf_LOCAL_DEPENDENCIES_ONLY:BOOL=OFF
+		-DZLIB_USE_STATIC_LIBS:BOOL=${IMPORT_PROJECT_STATIC}
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
@@ -1575,11 +1579,28 @@ function(ImportLIBWEBSOCKETS)
 		set(GIT_REPOSITORY "https://github.com/warmcat/libwebsockets.git")
 	endif()
 
+	if(IMPORT_PROJECT_STATIC)
+		set(LWS_WITH_SHARED OFF)
+	else()
+		set(LWS_WITH_SHARED ON)
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DCMAKE_DEBUG_POSTFIX:STRING=d
+		-DLWS_MSVC_STATIC_RUNTIME:BOOL=${IMPORT_PROJECT_STATIC_CRT}
+		-DLWS_WITH_SHARED:BOOL=${LWS_WITH_SHARED}
+		-DZLIB_USE_STATIC_LIBS:BOOL=${IMPORT_PROJECT_STATIC}
+		-DLWS_WITHOUT_TESTAPPS:BOOL=TRUE
+		-DCMAKE_CXX_FLAGS:STRING=/WX-
+		-DCMAKE_C_FLAGS:STRING=/WX-
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
@@ -2570,7 +2591,6 @@ function(Importwildmatch)
 		set(GIT_REPOSITORY "https://github.com/davvid/wildmatch.git")
 	endif()
 
-	# header only
 	configure_file(
 		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
@@ -2580,8 +2600,59 @@ function(Importwildmatch)
 		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
+		execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+endfunction()
+
+function(Importjwtcpp)
+	set(WORKING_DIRECTORY
+		${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT}
+	)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(FindInPath_FOUND)
+		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:Thalhammer/jwt-cpp.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/Thalhammer/jwt-cpp.git")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DJWT_BUILD_EXAMPLES:BOOL=OFF
+	)
+
+	# header only
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --config Release
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 
