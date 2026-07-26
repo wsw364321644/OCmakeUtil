@@ -176,6 +176,8 @@ function(ImportProject ProjectName)
 			ImportCONCURRENTQUEUE()
 		elseif(ProjectName STREQUAL "PalSigslot")
 			ImportPalSigslot()
+		elseif(ProjectName STREQUAL "mimalloc")
+			Importmimalloc()
 		elseif(ProjectName STREQUAL "ZLIB")
 			ImportZLIB()
 		elseif(ProjectName STREQUAL "CURL")
@@ -404,6 +406,63 @@ function(ImportPalSigslot)
 	)
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --config Release
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+endfunction()
+
+function(Importmimalloc)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(FindInPath_FOUND)
+		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(IMPORT_PROJECT_TAG)
+		set(ZLIB_TAG ${IMPORT_PROJECT_TAG})
+	else()
+		message(SEND_ERROR "missing mimalloc tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:microsoft/mimalloc.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/microsoft/mimalloc.git")
+	endif()
+
+	if(IMPORT_PROJECT_STATIC)
+		set(MI_BUILD_SHARED OFF)
+	else()
+		set(MI_BUILD_SHARED ON)
+	endif()
+	# cant build debug dynamic dll on windows
+	set(EXTERNALPROJECT_OPTION_EX
+		-DMI_BUILD_TESTS:BOOL=OFF
+		-DMI_INSTALL_TOPLEVEL:BOOL=ON
+		-DMI_BUILD_SHARED:BOOL=${MI_BUILD_SHARED}
+	)
+
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --config Debug
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 	execute_process(
@@ -2600,7 +2659,7 @@ function(Importwildmatch)
 		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
-		execute_process(
+	execute_process(
 		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
