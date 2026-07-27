@@ -1586,6 +1586,12 @@ function(ImportProtobuf)
 		set(GIT_REPOSITORY "https://github.com/protocolbuffers/protobuf.git")
 	endif()
 
+	if(IMPORT_PROJECT_STATIC)
+		set(BUILD_SHARED_LIBS OFF)
+	else()
+		set(BUILD_SHARED_LIBS ON)
+	endif()
+
 	set(EXTERNALPROJECT_OPTION_EX
 		-Dprotobuf_MSVC_STATIC_RUNTIME:BOOL=${IMPORT_PROJECT_STATIC_CRT}
 		-Dprotobuf_BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
