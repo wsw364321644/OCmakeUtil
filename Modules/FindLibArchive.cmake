@@ -96,7 +96,7 @@ find_library(LibArchive_LIBRARY_RELEASE
 	"libarchive library"
 )
 
-find_library(LibArchive_static_LIBRARY_DEBUG
+find_library(LibArchive_static_LIBRARY_RELEASE
 	NAMES
 	${LibArchive_static_NAMES}
 	PATHS
@@ -105,7 +105,7 @@ find_library(LibArchive_static_LIBRARY_DEBUG
 	"libarchive library"
 )
 
-find_library(LibArchive_static_LIBRARY_RELEASE
+find_library(LibArchive_static_LIBRARY_DEBUG
 	NAMES
 	${LibArchive_static_NAMES_DEBUG}
 	PATHS
