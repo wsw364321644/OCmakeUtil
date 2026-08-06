@@ -288,7 +288,7 @@ FUNCTION(Importimgui)
 
     AddTargetInclude(${TARGET_NAME})
     AddTargetInstall(${TARGET_NAME} ${TARGET_NAMESPACE})
-    ExportFromInstall(${TARGET_NAME})
+    ExportFromInstall(${TARGET_NAMESPACE})
 ENDFUNCTION(Importimgui)
 
 FUNCTION(Importmpack)
