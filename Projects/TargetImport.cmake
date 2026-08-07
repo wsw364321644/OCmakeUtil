@@ -260,7 +260,7 @@ FUNCTION(Importimgui)
     endif()
 
     add_library(${TARGET_NAME} STATIC ${SourceFiles})
-    add_library(${TARGET_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+    add_library(${TARGET_NAMESPACE}::${TARGET_NAME} ALIAS ${TARGET_NAME})
     target_compile_definitions(${TARGET_NAME} PUBLIC -DImTextureID=ImU64)
     target_compile_definitions(${TARGET_NAME} PUBLIC -DIMGUI_USE_WCHAR32)
 
