@@ -7,6 +7,7 @@ set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
 set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
 set(ProjectName_Lower @ProjectName_Lower@)
 set(ProjectName @ProjectName@)
+set(CMAKE_DEBUG_POSTFIX d)
 
 project(${ProjectName})
 enable_language(CXX)
