@@ -2,290 +2,456 @@ cmake_minimum_required(VERSION 3.20)
 include(GNUInstallDirs)
 
 if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_LINK_LIBRARY_USING_delayload "/DELAYLOAD:\"<LIBRARY>\"" CACHE STRING "Link library using delayload")
-    set(CMAKE_LINK_LIBRARY_USING_delayload_SUPPORTED TRUE CACHE BOOL "Link library using delayload supported")
+	set(
+		CMAKE_LINK_LIBRARY_USING_delayload
+		"/DELAYLOAD:\"<LIBRARY>\""
+		CACHE
+			STRING
+			"Link library using delayload"
+	)
+	set(
+		CMAKE_LINK_LIBRARY_USING_delayload_SUPPORTED
+		TRUE
+		CACHE
+			BOOL
+			"Link library using delayload supported"
+	)
 endif()
 
-set(CONFIG_INSTALL_BINDIR "$<CONFIG>/${CMAKE_INSTALL_BINDIR}" CACHE STRING "Install directory for executables")
-set(CONFIG_INSTALL_LIBDIR "$<CONFIG>/${CMAKE_INSTALL_LIBDIR}" CACHE STRING "Install directory for libraries")
-set(CONFIG_INSTALL_INCLUDEDIR "$<CONFIG>/${CMAKE_INSTALL_INCLUDEDIR}" CACHE STRING "Install directory for headers")
+set(
+	CONFIG_INSTALL_BINDIR
+	"$<CONFIG>/${CMAKE_INSTALL_BINDIR}"
+	CACHE
+		STRING
+		"Install directory for executables"
+)
+set(
+	CONFIG_INSTALL_LIBDIR
+	"$<CONFIG>/${CMAKE_INSTALL_LIBDIR}"
+	CACHE
+		STRING
+		"Install directory for libraries"
+)
+set(
+	CONFIG_INSTALL_INCLUDEDIR
+	"$<CONFIG>/${CMAKE_INSTALL_INCLUDEDIR}"
+	CACHE
+		STRING
+		"Install directory for headers"
+)
 
-FUNCTION(TargetAddDelayLoad _TargetName _DllName)
-    get_filename_component(FILE_SUFFIX "${_DllName}" EXT)
+function(TargetAddDelayLoad _TargetName _DllName)
+	get_filename_component(FILE_SUFFIX "${_DllName}" EXT)
 
-    if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-        target_link_libraries(${_TargetName} PRIVATE delayimp)
+	if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+		target_link_libraries(${_TargetName} PRIVATE delayimp)
 
-        if(FILE_SUFFIX MATCHES ".dll")
-            target_link_options(${_TargetName} PRIVATE "/DELAYLOAD:${_DllName}")
-        else()
-            target_link_options(${_TargetName} PRIVATE "/DELAYLOAD:${_DllName}.dll")
-        endif()
-    endif()
-ENDFUNCTION(TargetAddDelayLoad)
+		if(FILE_SUFFIX MATCHES ".dll")
+			target_link_options(${_TargetName} PRIVATE "/DELAYLOAD:${_DllName}")
+		else()
+			target_link_options(${_TargetName} PRIVATE "/DELAYLOAD:${_DllName}.dll")
+		endif()
+	endif()
+endfunction()
 
-FUNCTION(EXCLUDE_FILES_FROM_DIR_IN_LIST _InFileList _excludeDirName)
-    foreach(ITR ${_InFileList})
-        if("${ITR}" MATCHES "(.*)${_excludeDirName}(.*)") # Check if the item matches the directory name in _excludeDirName
-            list(REMOVE_ITEM _InFileList ${ITR}) # Remove the item from the list
-        endif("${ITR}" MATCHES "(.*)${_excludeDirName}(.*)")
-    endforeach(ITR)
+function(EXCLUDE_FILES_FROM_DIR_IN_LIST _InFileList _excludeDirName)
+	foreach(ITR ${_InFileList})
+		if("${ITR}"
+			MATCHES
+			"(.*)${_excludeDirName}(.*)"
+		) # Check if the item matches the directory name in _excludeDirName
+			list(REMOVE_ITEM _InFileList ${ITR}) # Remove the item from the list
+		endif()
+	endforeach()
 
-    set(EXCLUDED_FILES ${_InFileList} PARENT_SCOPE) # Return the SOURCE_FILES variable to the calling parent
-ENDFUNCTION(EXCLUDE_FILES_FROM_DIR_IN_LIST)
+	set(
+		EXCLUDED_FILES
+		${_InFileList} PARENT_SCOPE
+	) # Return the SOURCE_FILES variable to the calling parent
+endfunction()
 
 macro(ExcludeFile FileListVar)
-    if(WIN32)
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "Linux")
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "linux")
-    elseif(UNIX)
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "Windows")
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "windows")
-    endif()
+	if(WIN32)
+		EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "Linux")
+		EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "linux")
+	elseif(UNIX)
+		EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "Windows")
+		EXCLUDE_FILES_FROM_DIR_IN_LIST("${${FileListVar}}" "windows")
+	endif()
 
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X86")
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x86")
-    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X64")
-        EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x64")
-    endif()
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X86")
+		EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x86")
+	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X64")
+		EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x64")
+	endif()
 
-    set(${FileListVar} ${EXCLUDED_FILES})
-endmacro(ExcludeFile)
+	set(${FileListVar} ${EXCLUDED_FILES})
+endmacro()
 
 macro(SearchSourceFiles FolderPath)
-    set(temppath ${FolderPath})
-    cmake_path(APPEND temppath "*.h" OUTPUT_VARIABLE TmpHHeader)
-    cmake_path(APPEND temppath "*.hpp" OUTPUT_VARIABLE TmpHppHeader)
-    cmake_path(APPEND temppath "*.c" OUTPUT_VARIABLE TmpC)
-    cmake_path(APPEND temppath "*.cc" OUTPUT_VARIABLE TmpCC)
-    cmake_path(APPEND temppath "*.cpp" OUTPUT_VARIABLE TmpCpp)
-    cmake_path(APPEND temppath "*.s" OUTPUT_VARIABLE TmpS)
-    cmake_path(APPEND temppath "*.asm" OUTPUT_VARIABLE TmpAsm)
-    cmake_path(APPEND temppath "*.ico" OUTPUT_VARIABLE TmpIcon)
-    cmake_path(APPEND temppath "*.rc" OUTPUT_VARIABLE TmpRC)
+	set(temppath ${FolderPath})
+	cmake_path(APPEND temppath "*.h" OUTPUT_VARIABLE TmpHHeader)
+	cmake_path(APPEND temppath "*.hpp" OUTPUT_VARIABLE TmpHppHeader)
+	cmake_path(APPEND temppath "*.c" OUTPUT_VARIABLE TmpC)
+	cmake_path(APPEND temppath "*.cc" OUTPUT_VARIABLE TmpCC)
+	cmake_path(APPEND temppath "*.cpp" OUTPUT_VARIABLE TmpCpp)
+	cmake_path(APPEND temppath "*.s" OUTPUT_VARIABLE TmpS)
+	cmake_path(APPEND temppath "*.asm" OUTPUT_VARIABLE TmpAsm)
+	cmake_path(APPEND temppath "*.ico" OUTPUT_VARIABLE TmpIcon)
+	cmake_path(APPEND temppath "*.rc" OUTPUT_VARIABLE TmpRC)
 
-    cmake_path(APPEND temppath "*.config" OUTPUT_VARIABLE TmpConfig)
-    cmake_path(APPEND temppath "*.xaml" OUTPUT_VARIABLE TmpXAML)
-    cmake_path(APPEND temppath "*.cs" OUTPUT_VARIABLE TmpCS)
-    cmake_path(APPEND temppath "*.resx" OUTPUT_VARIABLE TmpRESX)
-    cmake_path(APPEND temppath "*.settings" OUTPUT_VARIABLE TmpSettings)
+	cmake_path(APPEND temppath "*.xaml" OUTPUT_VARIABLE TmpXAML)
+	cmake_path(APPEND temppath "*.cs" OUTPUT_VARIABLE TmpCS)
+	cmake_path(APPEND temppath "*.resx" OUTPUT_VARIABLE TmpRESX)
 
-    if(AddSourceFolder_RECURSE)
-        set(SearchParam_RECURSE GLOB_RECURSE)
-    else()
-        set(SearchParam_RECURSE GLOB)
-    endif()
 
-    if(AddSourceFolder_C)
-        file(${SearchParam_RECURSE} TmpHeader LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpHHeader} )
-        file(${SearchParam_RECURSE} TmpSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpC})
-    elseif(AddSourceFolder_CXX)
-        file(${SearchParam_RECURSE} TmpHeader LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpHppHeader})
-        file(${SearchParam_RECURSE} TmpSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpCC} ${TmpCpp})
-    else()
-        file(${SearchParam_RECURSE} TmpHeader LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpHHeader} ${TmpHppHeader})
-        file(${SearchParam_RECURSE} TmpSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpC} ${TmpCC} ${TmpCpp} ${TmpIcon} ${TmpRC})
-        file(${SearchParam_RECURSE} TmpAsmSource LIST_DIRECTORIES false CONFIGURE_DEPENDS ${TmpS} ${TmpAsm})
-    endif()
-    ExcludeFile(TmpAsmSource)
-    ExcludeFile(TmpHeader)
-    ExcludeFile(TmpSource)
-    set_property(SOURCE TmpAsmSource APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp")
-    list(APPEND TmpSource ${TmpAsmSource})
+	if(AddSourceFolder_RECURSE)
+		set(SearchParam_RECURSE GLOB_RECURSE)
+	else()
+		set(SearchParam_RECURSE GLOB)
+	endif()
 
-    # message(STATUS "EXCLUDED_FILES ${EXCLUDED_FILES}")
-    # if(NOT EXCLUDED_FILES STREQUAL "")
-    # set(SourceFiles "${SourceFiles};${EXCLUDED_FILES}")
-    # endif()
-endmacro(SearchSourceFiles)
+	if(AddSourceFolder_C)
+		file(${SearchParam_RECURSE}
+			TmpHeader
+			LIST_DIRECTORIES
+			false
+			CONFIGURE_DEPENDS
+			${TmpHHeader}
+		)
+		file(${SearchParam_RECURSE}
+			TmpSource
+			LIST_DIRECTORIES
+			false
+			CONFIGURE_DEPENDS
+			${TmpC}
+		)
+	elseif(AddSourceFolder_CXX)
+		file(${SearchParam_RECURSE}
+			TmpHeader
+			LIST_DIRECTORIES
+			false
+			CONFIGURE_DEPENDS
+			${TmpHppHeader}
+		)
+		file(${SearchParam_RECURSE}
+			TmpSource
+			LIST_DIRECTORIES
+			false
+			CONFIGURE_DEPENDS
+			${TmpCC}
+			${TmpCpp}
+		)
+	else()
+		file(${SearchParam_RECURSE}
+			TmpHeader
+			LIST_DIRECTORIES
+			false
+			CONFIGURE_DEPENDS
+			${TmpHHeader}
+			${TmpHppHeader}
+		)
+		file(${SearchParam_RECURSE}
+			TmpSource
+			LIST_DIRECTORIES
+			false
+			CONFIGURE_DEPENDS
+			${TmpC}
+			${TmpCC}
+			${TmpCpp}
+			${TmpIcon}
+			${TmpRC}
+		)
+		file(${SearchParam_RECURSE}
+			TmpAsmSource
+			LIST_DIRECTORIES
+			false
+			CONFIGURE_DEPENDS
+			${TmpS}
+			${TmpAsm}
+		)
+	endif()
+	ExcludeFile(TmpAsmSource)
+	ExcludeFile(TmpHeader)
+	ExcludeFile(TmpSource)
+	set_property(
+		SOURCE TmpAsmSource
+		APPEND
+		PROPERTY
+			COMPILE_OPTIONS
+			"-x"
+			"assembler-with-cpp"
+	)
+	list(APPEND TmpSource ${TmpAsmSource})
+
+	# message(STATUS "EXCLUDED_FILES ${EXCLUDED_FILES}")
+	# if(NOT EXCLUDED_FILES STREQUAL "")
+	# set(SourceFiles "${SourceFiles};${EXCLUDED_FILES}")
+	# endif()
+endmacro()
 
 macro(AddSourceFolder)
-    set(options INCLUDE RECURSE C CXX)
-    set(oneValueArgs)
-    set(multiValueArgs PUBLIC PRIVATE INTERFACE)
-    cmake_parse_arguments(AddSourceFolder "${options}" "${oneValueArgs}"
-        "${multiValueArgs}" ${ARGN})
+	set(options INCLUDE RECURSE C CXX)
+	set(oneValueArgs)
+	set(multiValueArgs PUBLIC PRIVATE INTERFACE CONFIG)
+	cmake_parse_arguments(AddSourceFolder
+		"${options}"
+		"${oneValueArgs}"
+		"${multiValueArgs}"
+		${ARGN}
+	)
 
-    foreach(SourceFolder ${AddSourceFolder_PRIVATE})
-        # list(LENGTH PrivateIncludeFolders FoldersLength)
-        list(APPEND PrivateIncludeFolders ${SourceFolder})
-        SearchSourceFiles(${SourceFolder})
-        list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
-        list(APPEND PrivateFiles ${TmpHeader})
+	foreach(SourceFolder ${AddSourceFolder_PRIVATE})
+		# list(LENGTH PrivateIncludeFolders FoldersLength)
+		list(APPEND PrivateIncludeFolders ${SourceFolder})
+		SearchSourceFiles(${SourceFolder})
+		list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+		list(APPEND PrivateFiles ${TmpHeader})
 
-        # set("PrivateFiles${FoldersLength}" "")
-        # list(APPEND "PrivateFiles${FoldersLength}" ${TmpHeader} ${TmpSource})
-    endforeach()
+		# set("PrivateFiles${FoldersLength}" "")
+		# list(APPEND "PrivateFiles${FoldersLength}" ${TmpHeader} ${TmpSource})
+	endforeach()
 
-    foreach(SourceFolder ${AddSourceFolder_UNPARSED_ARGUMENTS})
-        # list(LENGTH PrivateIncludeFolders FoldersLength)
-        list(APPEND PrivateIncludeFolders ${SourceFolder})
-        SearchSourceFiles(${SourceFolder})
-        list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
-        list(APPEND PrivateFiles ${TmpHeader} ${TmpSource})
+	foreach(SourceFolder ${AddSourceFolder_UNPARSED_ARGUMENTS})
+		# list(LENGTH PrivateIncludeFolders FoldersLength)
+		list(APPEND PrivateIncludeFolders ${SourceFolder})
+		SearchSourceFiles(${SourceFolder})
+		list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+		list(APPEND PrivateFiles ${TmpHeader} ${TmpSource})
 
-        # set("PrivateFiles${FoldersLength}" "")
-        # list(APPEND "PrivateFiles${FoldersLength}" ${TmpHeader} ${TmpSource})
-    endforeach()
+		# set("PrivateFiles${FoldersLength}" "")
+		# list(APPEND "PrivateFiles${FoldersLength}" ${TmpHeader} ${TmpSource})
+	endforeach()
 
-    foreach(SourceFolder ${AddSourceFolder_PUBLIC})
-        # list(LENGTH PublicIncludeFolders FoldersLength)
-        list(APPEND PublicIncludeFolders ${SourceFolder})
-        SearchSourceFiles(${SourceFolder})
+	foreach(SourceFolder ${AddSourceFolder_PUBLIC})
+		# list(LENGTH PublicIncludeFolders FoldersLength)
+		list(APPEND PublicIncludeFolders ${SourceFolder})
+		SearchSourceFiles(${SourceFolder})
 
-        if(AddSourceFolder_INCLUDE)
-            list(APPEND SourceFiles ${TmpHeader})
-        else()
-            list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
-            list(APPEND PrivateFiles ${TmpSource})
-        endif()
+		if(AddSourceFolder_INCLUDE)
+			list(APPEND SourceFiles ${TmpHeader})
+		else()
+			list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+			list(APPEND PrivateFiles ${TmpSource})
+		endif()
 
-        foreach(FILE ${TmpHeader})
-            cmake_path(
-                RELATIVE_PATH FILE
-                BASE_DIRECTORY ${SourceFolder}
-                OUTPUT_VARIABLE IncludeFileRelativePath
-            )
-            #cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
-            cmake_path(APPEND ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
-            list(APPEND PublicIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
-            list(APPEND PublicIncludeFiles "$<INSTALL_INTERFACE:${IncludeFileInstallPath}>")
-        endforeach()
+		foreach(FILE ${TmpHeader})
+			cmake_path(RELATIVE_PATH
+				FILE
+				BASE_DIRECTORY
+				${SourceFolder}
+				OUTPUT_VARIABLE
+				IncludeFileRelativePath
+			)
+			# cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
+			cmake_path(APPEND
+				${CMAKE_INSTALL_INCLUDEDIR}
+				${IncludeFileRelativePath}
+				OUTPUT_VARIABLE
+				IncludeFileInstallPath
+			)
+			list(APPEND PublicIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
+			list(APPEND PublicIncludeFiles
+				"$<INSTALL_INTERFACE:${IncludeFileInstallPath}>"
+			)
+		endforeach()
 
-        # set("PublicIncludeFiles${FoldersLength}" "")
-        # list(APPEND "PublicIncludeFiles${FoldersLength}" ${TmpHeader})
-    endforeach()
+		# set("PublicIncludeFiles${FoldersLength}" "")
+		# list(APPEND "PublicIncludeFiles${FoldersLength}" ${TmpHeader})
+	endforeach()
 
-    foreach(SourceFolder ${AddSourceFolder_INTERFACE})
-        # list(LENGTH InterfaceIncludeFolders FoldersLength)
-        list(APPEND InterfaceIncludeFolders ${SourceFolder})
-        SearchSourceFiles(${SourceFolder})
+	foreach(SourceFolder ${AddSourceFolder_INTERFACE})
+		# list(LENGTH InterfaceIncludeFolders FoldersLength)
+		list(APPEND InterfaceIncludeFolders ${SourceFolder})
+		SearchSourceFiles(${SourceFolder})
 
-        if(AddSourceFolder_INCLUDE)
-            list(APPEND SourceFiles ${TmpHeader})
-        else()
-            list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
-            list(APPEND PrivateFiles ${TmpSource})
-        endif()
+		if(AddSourceFolder_INCLUDE)
+			list(APPEND SourceFiles ${TmpHeader})
+		else()
+			list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+			list(APPEND PrivateFiles ${TmpSource})
+		endif()
 
-        foreach(FILE ${TmpHeader})
-            cmake_path(RELATIVE_PATH FILE
-                BASE_DIRECTORY ${SourceFolder}
-                OUTPUT_VARIABLE IncludeFileRelativePath)
-            #cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
-            cmake_path(APPEND ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
-            list(APPEND InterfaceIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
-            list(APPEND InterfaceIncludeFiles "$<INSTALL_INTERFACE:${IncludeFileInstallPath}>")
-        endforeach()
+		foreach(FILE ${TmpHeader})
+			cmake_path(RELATIVE_PATH
+				FILE
+				BASE_DIRECTORY
+				${SourceFolder}
+				OUTPUT_VARIABLE
+				IncludeFileRelativePath
+			)
+			# cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
+			cmake_path(APPEND
+				${CMAKE_INSTALL_INCLUDEDIR}
+				${IncludeFileRelativePath}
+				OUTPUT_VARIABLE
+				IncludeFileInstallPath
+			)
+			list(APPEND InterfaceIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
+			list(APPEND InterfaceIncludeFiles
+				"$<INSTALL_INTERFACE:${IncludeFileInstallPath}>"
+			)
+		endforeach()
 
-        # set("InterfaceIncludeFiles${FoldersLength}" "")
-        # list(APPEND "InterfaceIncludeFiles${FoldersLength}" ${TmpHeader})
-    endforeach()
-endmacro(AddSourceFolder)
+		# set("InterfaceIncludeFiles${FoldersLength}" "")
+		# list(APPEND "InterfaceIncludeFiles${FoldersLength}" ${TmpHeader})
+	endforeach()
+
+	foreach(SourceFolder ${AddSourceFolder_CONFIG})
+		cmake_path(APPEND SourceFolder "*.config" OUTPUT_VARIABLE TmpConfig)
+		cmake_path(APPEND SourceFolder "*.settings" OUTPUT_VARIABLE TmpSettings)
+		cmake_path(APPEND SourceFolder "*.json" OUTPUT_VARIABLE TmpJson)
+		cmake_path(APPEND SourceFolder "*.toml" OUTPUT_VARIABLE TmpTOML)
+		cmake_path(APPEND SourceFolder "*.ini" OUTPUT_VARIABLE TmpINI)
+
+		if(AddSourceFolder_RECURSE)
+			set(SearchParam_RECURSE GLOB_RECURSE)
+		else()
+			set(SearchParam_RECURSE GLOB)
+		endif()
+
+		file(${SearchParam_RECURSE}
+			TmpConfigFiles
+			LIST_DIRECTORIES
+			false
+			CONFIGURE_DEPENDS
+			${TmpConfig}
+			${TmpSettings}
+			${TmpJson}
+			${TmpTOML}
+			${TmpINI}
+		)
+		list(APPEND ConfigFiles ${TmpConfigFiles})
+	endforeach()
+endmacro()
 
 macro(NewTargetSource)
-    set(SourceFiles "")
-    set(PrivateIncludeFolders "")
-    set(PublicIncludeFolders "")
-    set(InterfaceIncludeFolders "")
+	set(SourceFiles "")
+	set(PrivateIncludeFolders "")
+	set(PublicIncludeFolders "")
+	set(InterfaceIncludeFolders "")
 
-    set(PrivateFiles "")
-    set(PublicIncludeFiles "")
-    set(InterfaceIncludeFiles "")
-endmacro(NewTargetSource)
+	set(PrivateFiles "")
+	set(PublicIncludeFiles "")
+	set(InterfaceIncludeFiles "")
+	set(ConfigFiles "")
+endmacro()
 
 macro(AddTargetInclude TARGET_NAME)
-    list(LENGTH PrivateFiles FilesLength)
+	list(LENGTH PrivateFiles FilesLength)
 
-    if(${FilesLength} GREATER 0)
-        target_include_directories(${TARGET_NAME}
-            PRIVATE ${PrivateIncludeFolders}
-        )
-        target_sources(${TARGET_NAME}
-            PRIVATE
-            ${PrivateFiles}
-        )
-    endif()
+	if(${FilesLength} GREATER 0)
+		target_include_directories(${TARGET_NAME}
+			PRIVATE ${PrivateIncludeFolders}
+		)
+		target_sources(${TARGET_NAME}
+			PRIVATE ${PrivateFiles}
+		)
+	endif()
 
-    list(LENGTH PublicIncludeFiles FilesLength)
+	list(LENGTH PublicIncludeFiles FilesLength)
 
-    if(${FilesLength} GREATER 0)
-        #string(REPLACE "@TARGET_NAME_TOKEN@" ${TARGET_NAME} FinalFiles "${PublicIncludeFiles}")
-        target_sources(${TARGET_NAME}
-            PUBLIC
-            FILE_SET HEADERS
-            BASE_DIRS ${PublicIncludeFolders}
-            FILES
-            ${PublicIncludeFiles}
-        )
-    endif()
+	if(${FilesLength} GREATER 0)
+		# string(REPLACE "@TARGET_NAME_TOKEN@" ${TARGET_NAME} FinalFiles "${PublicIncludeFiles}")
+		target_sources(${TARGET_NAME}
+			PUBLIC
+			FILE_SET HEADERS
+			BASE_DIRS
+			${PublicIncludeFolders}
+			FILES
+			${PublicIncludeFiles}
+		)
+	endif()
 
-    list(LENGTH InterfaceIncludeFiles FilesLength)
+	list(LENGTH InterfaceIncludeFiles FilesLength)
 
-    if(${FilesLength} GREATER 0)
-        #string(REPLACE "@TARGET_NAME_TOKEN@" ${TARGET_NAME} FinalFiles "${InterfaceIncludeFiles}")
-        target_sources(${TARGET_NAME}
-            PUBLIC
-            FILE_SET HEADERS
-            BASE_DIRS ${InterfaceIncludeFolders}
-            FILES
-            ${InterfaceIncludeFiles}
-        )
-    endif()
-    #message(STATUS "Include ${TARGET_NAME} ${PublicIncludeFolders} ${PublicIncludeFiles}")
-endmacro(AddTargetInclude)
+	if(${FilesLength} GREATER 0)
+		# string(REPLACE "@TARGET_NAME_TOKEN@" ${TARGET_NAME} FinalFiles "${InterfaceIncludeFiles}")
+		target_sources(${TARGET_NAME}
+			PUBLIC
+			FILE_SET HEADERS
+			BASE_DIRS
+			${InterfaceIncludeFolders}
+			FILES
+			${InterfaceIncludeFiles}
+		)
+	endif()
+
+	list(LENGTH ConfigFiles FilesLength)
+	if(${FilesLength} GREATER 0)
+		target_sources(${TARGET_NAME}
+			PUBLIC 
+            FILE_SET config_files
+            TYPE SOURCES
+            FILES ${ConfigFiles}
+		)
+	endif()
+
+	# message(STATUS "Include ${TARGET_NAME} ${PublicIncludeFolders} ${PublicIncludeFiles}")
+endmacro()
 
 macro(AddTargetInstall TARGET_NAME EXPORT_NAME)
-    # get_target_property(target_type ${TARGET_NAME} TYPE)
+	# get_target_property(target_type ${TARGET_NAME} TYPE)
 
-    # set(TARGET_NAMESPACE ${EXPORT_NAME})
+	# set(TARGET_NAMESPACE ${EXPORT_NAME})
 
-    # if(NOT target_type STREQUAL "EXECUTABLE")
-    #     add_library(${TARGET_NAMESPACE}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-    # endif()
+	# if(NOT target_type STREQUAL "EXECUTABLE")
+	#     add_library(${TARGET_NAMESPACE}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+	# endif()
 
-    install(TARGETS ${TARGET_NAME}
-        EXPORT ${EXPORT_NAME}Targets
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        #PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILE_SET HEADERS
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-endmacro(AddTargetInstall)
+	install(
+		TARGETS ${TARGET_NAME}
+		EXPORT ${EXPORT_NAME}Targets
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		RUNTIME
+			DESTINATION
+			${CMAKE_INSTALL_BINDIR}
+			# PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+		FILE_SET HEADERS
+		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILE_SET config_files
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+	)
+endmacro()
 
 macro(ExportFromInstall EXPORT_NAME)
-    include(CMakePackageConfigHelpers)
-    set(EXPORT_NAME ${EXPORT_NAME})
-    set(TARGET_NAMESPACE ${EXPORT_NAME})
+	include(CMakePackageConfigHelpers)
+	set(EXPORT_NAME ${EXPORT_NAME})
+	set(TARGET_NAMESPACE ${EXPORT_NAME})
 
-    install(EXPORT ${EXPORT_NAME}Targets
-        FILE ${EXPORT_NAME}Targets.cmake
-        NAMESPACE ${TARGET_NAMESPACE}::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
-    )
+	install(EXPORT ${EXPORT_NAME}Targets
+		FILE ${EXPORT_NAME}Targets.cmake
+		NAMESPACE ${TARGET_NAMESPACE}::
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
+	)
 
-    configure_package_config_file(
-        ${OCMAKEUTIL_PROJECTS_PATH}/CommonConfig.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}Config.cmake
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
+	configure_package_config_file(
+		${OCMAKEUTIL_PROJECTS_PATH}/CommonConfig.cmake.in
+		${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}Config.cmake
+		INSTALL_DESTINATION
+		${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+	)
 
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}Config.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
-    )
+	install(
+		FILES ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}Config.cmake
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
+	)
 
-    if(DEFINED PROJECT_VERSION)
-        write_basic_package_version_file(
-            ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
-            VERSION ${PROJECT_VERSION}
-            COMPATIBILITY AnyNewerVersion)
+	if(DEFINED PROJECT_VERSION)
+		write_basic_package_version_file(
+			${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
+			VERSION
+			${PROJECT_VERSION}
+			COMPATIBILITY
+			AnyNewerVersion
+		)
 
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
-        )
-    endif()
-endmacro(ExportFromInstall)
+		install(
+			FILES ${CMAKE_CURRENT_BINARY_DIR}/${EXPORT_NAME}ConfigVersion.cmake
+			DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${EXPORT_NAME}
+		)
+	endif()
+endmacro()
