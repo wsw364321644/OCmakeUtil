@@ -2452,6 +2452,10 @@ function(Importctre)
 		)
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DCTRE_BUILD_TESTS:BOOL=OFF
+	)
+
 	# header only
 	configure_file(
 		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
