@@ -106,7 +106,6 @@ macro(SearchSourceFiles FolderPath)
 	cmake_path(APPEND temppath "*.cs" OUTPUT_VARIABLE TmpCS)
 	cmake_path(APPEND temppath "*.resx" OUTPUT_VARIABLE TmpRESX)
 
-
 	if(AddSourceFolder_RECURSE)
 		set(SearchParam_RECURSE GLOB_RECURSE)
 	else()
@@ -194,7 +193,7 @@ endmacro()
 
 macro(AddSourceFolder)
 	set(options INCLUDE RECURSE C CXX)
-	set(oneValueArgs)
+	set(oneValueArgs BASE)
 	set(multiValueArgs PUBLIC PRIVATE INTERFACE CONFIG)
 	cmake_parse_arguments(AddSourceFolder
 		"${options}"
@@ -205,7 +204,11 @@ macro(AddSourceFolder)
 
 	foreach(SourceFolder ${AddSourceFolder_PRIVATE})
 		# list(LENGTH PrivateIncludeFolders FoldersLength)
-		list(APPEND PrivateIncludeFolders ${SourceFolder})
+		if(DEFINED AddSourceFolder_BASE)
+			list(APPEND PrivateIncludeFolders ${AddSourceFolder_BASE})
+		else()
+			list(APPEND PrivateIncludeFolders ${SourceFolder})
+		endif()
 		SearchSourceFiles(${SourceFolder})
 		list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
 		list(APPEND PrivateFiles ${TmpHeader})
@@ -216,7 +219,11 @@ macro(AddSourceFolder)
 
 	foreach(SourceFolder ${AddSourceFolder_UNPARSED_ARGUMENTS})
 		# list(LENGTH PrivateIncludeFolders FoldersLength)
-		list(APPEND PrivateIncludeFolders ${SourceFolder})
+		if(DEFINED AddSourceFolder_BASE)
+			list(APPEND PrivateIncludeFolders ${AddSourceFolder_BASE})
+		else()
+			list(APPEND PrivateIncludeFolders ${SourceFolder})
+		endif()
 		SearchSourceFiles(${SourceFolder})
 		list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
 		list(APPEND PrivateFiles ${TmpHeader} ${TmpSource})
@@ -227,7 +234,12 @@ macro(AddSourceFolder)
 
 	foreach(SourceFolder ${AddSourceFolder_PUBLIC})
 		# list(LENGTH PublicIncludeFolders FoldersLength)
-		list(APPEND PublicIncludeFolders ${SourceFolder})
+		if(DEFINED AddSourceFolder_BASE)
+			list(APPEND PublicIncludeFolders ${AddSourceFolder_BASE})
+		else()
+			list(APPEND PublicIncludeFolders ${SourceFolder})
+		endif()
+
 		SearchSourceFiles(${SourceFolder})
 
 		if(AddSourceFolder_INCLUDE)
@@ -264,7 +276,12 @@ macro(AddSourceFolder)
 
 	foreach(SourceFolder ${AddSourceFolder_INTERFACE})
 		# list(LENGTH InterfaceIncludeFolders FoldersLength)
-		list(APPEND InterfaceIncludeFolders ${SourceFolder})
+		if(DEFINED AddSourceFolder_BASE)
+			list(APPEND InterfaceIncludeFolders ${AddSourceFolder_BASE})
+		else()
+			list(APPEND InterfaceIncludeFolders ${SourceFolder})
+		endif()
+
 		SearchSourceFiles(${SourceFolder})
 
 		if(AddSourceFolder_INCLUDE)
@@ -382,10 +399,12 @@ macro(AddTargetInclude TARGET_NAME)
 	list(LENGTH ConfigFiles FilesLength)
 	if(${FilesLength} GREATER 0)
 		target_sources(${TARGET_NAME}
-			PUBLIC 
-            FILE_SET config_files
-            TYPE SOURCES
-            FILES ${ConfigFiles}
+			PUBLIC
+			FILE_SET config_files
+			TYPE
+			SOURCES
+			FILES
+			${ConfigFiles}
 		)
 	endif()
 
@@ -412,8 +431,8 @@ macro(AddTargetInstall TARGET_NAME EXPORT_NAME)
 			# PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 		FILE_SET HEADERS
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILE_SET config_files
-        DESTINATION ${CMAKE_INSTALL_BINDIR}
+		FILE_SET config_files
+		DESTINATION ${CMAKE_INSTALL_BINDIR}
 	)
 endmacro()
 

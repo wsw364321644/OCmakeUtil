@@ -1253,7 +1253,7 @@ function(ImportOPENSSL)
 endfunction()
 
 function(ImportQINIU)
-	set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/rundir)
+	set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
 	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
 	if(FindInPath_FOUND)
@@ -1287,11 +1287,11 @@ function(ImportQINIU)
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
+		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
+		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 

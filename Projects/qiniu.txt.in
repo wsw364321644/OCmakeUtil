@@ -4,108 +4,134 @@ include(ExternalProject)
 include(CMakePackageConfigHelpers)
 set(FETCHCONTENT_QUIET FALSE)
 
+project(qiniu)
+
 set(OCMAKEUTIL_PATH @OCMAKEUTIL_PATH@)
 set(OCMAKEUTIL_PROJECTS_PATH @OCMAKEUTIL_PROJECTS_PATH@)
 set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
 set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
 set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
 set(CURL_USE_STATIC_LIBS @CURL_USE_STATIC_LIBS@)
+set(ProjectName_Lower @ProjectName_Lower@)
+add_subdirectory(${OCMAKEUTIL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/ocmakeutil)
 
-project(qiniu)
 enable_language(C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_DEBUG_POSTFIX d)
 include(GNUInstallDirs)
 
-add_subdirectory(${OCMAKEUTIL_PATH} "${CMAKE_CURRENT_BINARY_DIR}/ocmakeutil-build")
-
 find_package(CURL REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 if(IMPORT_PROJECT_STATIC_CRT)
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX
-    "${CMAKE_BINARY_DIR}/rundir"
-    CACHE PATH "Directory to install after building" FORCE)
+	set(
+		CMAKE_INSTALL_PREFIX
+		"${CMAKE_SOURCE_DIR}/${ProjectName_Lower}-prefix"
+		CACHE
+			PATH
+			"Directory to install after building"
+		FORCE
+	)
 endif()
 
 FetchContent_Declare(
-  qiniu
-  GIT_REPOSITORY @GIT_REPOSITORY@
-  GIT_TAG @IMPORT_PROJECT_TAG@
-  SOURCE_SUBDIR "avoid_add_subdirectory"
+	qiniu
+	GIT_REPOSITORY
+	@GIT_REPOSITORY@
+	GIT_TAG
+	@IMPORT_PROJECT_TAG@
+	SOURCE_SUBDIR
+	"avoid_add_subdirectory"
 )
 FetchContent_MakeAvailable(qiniu)
 FetchContent_GetProperties(qiniu)
 
-set(REGEX_STRING "^const *char *\\*version *= *\\\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\\\"\\;$")
-file(STRINGS "${qiniu_SOURCE_DIR}/qiniu/conf.c" QINIU_VERSION_MAJOR REGEX ${REGEX_STRING})
+set(REGEX_STRING
+	"^const *char *\\*version *= *\\\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\\\"\\;$"
+)
+file(STRINGS "${qiniu_SOURCE_DIR}/qiniu/conf.c"
+	QINIU_VERSION_MAJOR
+	REGEX ${REGEX_STRING}
+)
 list(GET QINIU_VERSION_MAJOR 0 QINIU_VERSION_MAJOR)
 set(QINIU_VERSION_MINOR "${QINIU_VERSION_MAJOR}")
 set(QINIU_VERSION_RELEASE "${QINIU_VERSION_MAJOR}")
-string(REGEX REPLACE ${REGEX_STRING} "\\1" QINIU_VERSION_MAJOR "${QINIU_VERSION_MAJOR}")
-string(REGEX REPLACE ${REGEX_STRING} "\\2" QINIU_VERSION_MINOR "${QINIU_VERSION_MINOR}")
-string(REGEX REPLACE ${REGEX_STRING} "\\3" QINIU_VERSION_RELEASE "${QINIU_VERSION_RELEASE}")
-set(QINIU_VERSION_STRING "${QINIU_VERSION_MAJOR}.${QINIU_VERSION_MINOR}.${QINIU_VERSION_RELEASE}")
+string(REGEX
+	REPLACE
+	${REGEX_STRING}
+	"\\1"
+	QINIU_VERSION_MAJOR
+	"${QINIU_VERSION_MAJOR}"
+)
+string(REGEX
+	REPLACE
+	${REGEX_STRING}
+	"\\2"
+	QINIU_VERSION_MINOR
+	"${QINIU_VERSION_MINOR}"
+)
+string(REGEX
+	REPLACE
+	${REGEX_STRING}
+	"\\3"
+	QINIU_VERSION_RELEASE
+	"${QINIU_VERSION_RELEASE}"
+)
+set(QINIU_VERSION_STRING
+	"${QINIU_VERSION_MAJOR}.${QINIU_VERSION_MINOR}.${QINIU_VERSION_RELEASE}"
+)
 
 NewTargetSource()
-file(GLOB PublicIncludeFiles "${qiniu_SOURCE_DIR}/b64/*.h" "${qiniu_SOURCE_DIR}/cJSON/*.h" "${qiniu_SOURCE_DIR}/hashmap/*.h" "${qiniu_SOURCE_DIR}/qiniu/*.h")
-file(GLOB PRIVATE_HEADER_FILES "${qiniu_SOURCE_DIR}/qiniu/private/*.h")
-file(GLOB SOURCE_C_FILES "${qiniu_SOURCE_DIR}/b64/*.c" "${qiniu_SOURCE_DIR}/cJSON/*.c" "${qiniu_SOURCE_DIR}/hashmap/*.c" "${qiniu_SOURCE_DIR}/qiniu/*.c")
-set(SourceFiles ${PublicIncludeFiles} ${PRIVATE_HEADER_FILES} ${SOURCE_C_FILES})
-set(PublicIncludeFolders ${qiniu_SOURCE_DIR})
+
+AddSourceFolder(BASE "${qiniu_SOURCE_DIR}" PRIVATE "${qiniu_SOURCE_DIR}/b64")
+AddSourceFolder(BASE "${qiniu_SOURCE_DIR}" PRIVATE "${qiniu_SOURCE_DIR}/cJSON")
+AddSourceFolder(BASE "${qiniu_SOURCE_DIR}" PRIVATE "${qiniu_SOURCE_DIR}/hashmap")
+AddSourceFolder(BASE "${qiniu_SOURCE_DIR}" PRIVATE "${qiniu_SOURCE_DIR}/qiniu/private")
+AddSourceFolder(BASE "${qiniu_SOURCE_DIR}" PUBLIC "${qiniu_SOURCE_DIR}/qiniu")
 
 function(update_lib TARGET_NAME)
-  set(QINIU_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}/")
+	set(QINIU_CONFIG_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${TARGET_NAME}/")
+	if(MSVC)
+		target_compile_options(${TARGET_NAME}
+			PRIVATE "$<$<C_COMPILER_ID:MSVC>:/utf-8>"
+		)
+		target_compile_options(${TARGET_NAME}
+			PRIVATE "$<$<CXX_COMPILER_ID:MSVC>:/utf-8>"
+		)
+	endif()
+	if(WIN32)
+		set_target_properties(${TARGET_NAME}
+			PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:msvcrt"
+		)
+		set_target_properties(${TARGET_NAME}
+			PROPERTIES LINK_FLAGS_RELEASE "/NODEFAULTLIB:LIBCMTD.LIB /NODEFAULTLIB:msvcrtd"
+		)
+	endif()
 
-  if(WIN32)
-    set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_DEBUG "/NODEFAULTLIB:LIBCMT.LIB /NODEFAULTLIB:msvcrt")
-    set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_RELEASE "/NODEFAULTLIB:LIBCMTD.LIB /NODEFAULTLIB:msvcrtd")
-  endif()
+	target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::SSL)
+	target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::Crypto)
 
-  target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
-  target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::SSL)
-  target_link_libraries(${TARGET_NAME} PRIVATE OpenSSL::Crypto)
-
-  AddTargetInclude(${TARGET_NAME})
-  add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-  AddTargetInstall(${TARGET_NAME} ${PROJECT_NAME})
+	AddTargetInclude(${TARGET_NAME})
+	add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+	AddTargetInstall(${TARGET_NAME} ${PROJECT_NAME})
 endfunction()
 
-install(DIRECTORY
-  "${qiniu_SOURCE_DIR}/b64/"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/b64/
-  FILES_MATCHING PATTERN "*.h")
-
-install(DIRECTORY
-  "${qiniu_SOURCE_DIR}/cJSON/"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cJSON/
-  FILES_MATCHING PATTERN "*.h")
-
-install(DIRECTORY
-  "${qiniu_SOURCE_DIR}/hashmap/"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hashmap/
-  FILES_MATCHING PATTERN "*.h")
-
-install(DIRECTORY
-  "${qiniu_SOURCE_DIR}/qiniu/"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qiniu/
-  FILES_MATCHING PATTERN "*.h"
-  PATTERN "private" EXCLUDE)
-
-SET(TARGET_NAME qiniu)
+set(TARGET_NAME qiniu)
 add_library(${TARGET_NAME} SHARED ${SourceFiles})
 target_compile_definitions(${TARGET_NAME} PRIVATE -DCOMPILING_QINIU_LIBRARY_DLL)
 target_compile_definitions(${TARGET_NAME} INTERFACE -DUSING_QINIU_LIBRARY_DLL)
+target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl_shared)
 update_lib(${TARGET_NAME})
 
-SET(TARGET_NAME ${TARGET_NAME}_a)
+set(TARGET_NAME ${TARGET_NAME}_static)
 add_library(${TARGET_NAME} STATIC ${SourceFiles})
+target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl_static)
 update_lib(${TARGET_NAME})
 
 ExportFromInstall(${PROJECT_NAME})
