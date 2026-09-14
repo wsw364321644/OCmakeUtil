@@ -268,6 +268,10 @@ function(ImportProject ProjectName)
 			Importwildmatch()
 		elseif(ProjectName STREQUAL "jwt-cpp")
 			Importjwtcpp()
+		elseif(ProjectName STREQUAL "semver")
+			Importsemver()
+		elseif(ProjectName STREQUAL "sentry")
+			Importsentry()
 		else()
 			message(FATAL_ERROR "no project ${ProjectName} to import")
 		endif()
@@ -1253,7 +1257,9 @@ function(ImportOPENSSL)
 endfunction()
 
 function(ImportQINIU)
-	set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
 	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
 	if(FindInPath_FOUND)
@@ -2716,6 +2722,111 @@ function(Importjwtcpp)
 	)
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --config Release
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+endfunction()
+
+function(Importsemver)
+	set(WORKING_DIRECTORY
+		${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT}
+	)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(FindInPath_FOUND)
+		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:Neargye/semver.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/Neargye/semver.git")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DSEMVER_OPT_BUILD_TESTS:bool=OFF
+		-DSEMVER_OPT_BUILD_EXAMPLES:bool=OFF
+	)
+
+	# header only
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --config Release
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+endfunction()
+
+function(Importsentry)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(FindInPath_FOUND)
+		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:getsentry/sentry-native.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/getsentry/sentry-native.git")
+	endif()
+
+	if(IMPORT_PROJECT_STATIC)
+		set(SENTRY_BUILD_SHARED_LIBS FALSE)
+	else()
+		set(SENTRY_BUILD_SHARED_LIBS TRUE)
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DCMAKE_DEBUG_POSTFIX:STRING=d
+		-DSENTRY_BUILD_SHARED_LIBS:BOOL=${SENTRY_BUILD_SHARED_LIBS}
+		-DSENTRY_BUILD_RUNTIMESTATIC:BOOL=${IMPORT_PROJECT_STATIC_CRT}
+		-DSENTRY_BUILD_EXAMPLES:BOOL=OFF
+		-DSENTRY_BUILD_TESTS:BOOL=OFF
+	)
+
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --config Debug
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 	execute_process(
