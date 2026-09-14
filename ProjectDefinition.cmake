@@ -55,19 +55,14 @@ function(TargetAddDelayLoad _TargetName _DllName)
 endfunction()
 
 function(EXCLUDE_FILES_FROM_DIR_IN_LIST _InFileList _excludeDirName)
+	set(_toRemove)
 	foreach(ITR ${_InFileList})
-		if("${ITR}"
-			MATCHES
-			"(.*)${_excludeDirName}(.*)"
-		) # Check if the item matches the directory name in _excludeDirName
-			list(REMOVE_ITEM _InFileList ${ITR}) # Remove the item from the list
+		if("${ITR}" MATCHES "(^|/)${_excludeDirName}/[^/]+$")
+			list(APPEND _toRemove ${ITR})
 		endif()
 	endforeach()
-
-	set(
-		EXCLUDED_FILES
-		${_InFileList} PARENT_SCOPE
-	) # Return the SOURCE_FILES variable to the calling parent
+	list(REMOVE_ITEM _InFileList ${_toRemove})
+	set(EXCLUDED_FILES ${_InFileList} PARENT_SCOPE)
 endfunction()
 
 macro(ExcludeFile FileListVar)
@@ -86,7 +81,6 @@ macro(ExcludeFile FileListVar)
 		EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "X64")
 		EXCLUDE_FILES_FROM_DIR_IN_LIST("${EXCLUDED_FILES}" "x64")
 	endif()
-
 	set(${FileListVar} ${EXCLUDED_FILES})
 endmacro()
 
