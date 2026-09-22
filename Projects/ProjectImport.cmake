@@ -268,6 +268,8 @@ function(ImportProject ProjectName)
 			Importwildmatch()
 		elseif(ProjectName STREQUAL "jwt-cpp")
 			Importjwtcpp()
+		elseif(ProjectName STREQUAL "isptr")
+			Importisptr()
 		elseif(ProjectName STREQUAL "semver")
 			Importsemver()
 		elseif(ProjectName STREQUAL "sentry")
@@ -1814,9 +1816,21 @@ function(ImportRAPIDJSON)
 	)
 
 	# delete RapidJSON_DIR
-	file(READ "${${ProjectName}_INSTALL_DIR}/cmake/RapidJSONConfig.cmake"
+
+	if(WIN32)
+		set(CONFIG_FILE_PATH
+			"${${ProjectName}_INSTALL_DIR}/cmake/RapidJSONConfig.cmake"
+		)
+	else()
+		set(CONFIG_FILE_PATH
+			"${${ProjectName}_INSTALL_DIR}/lib/cmake/RapidJSON/RapidJSONConfig.cmake"
+		)
+	endif()
+
+	file(READ ${CONFIG_FILE_PATH}
 		FILE_CONTENT
 	)
+
 	string(REGEX
 		REPLACE
 		"[^\r\n]*RapidJSON_DIR[^\r\n]*(\r?\n|\r)?"
@@ -1845,7 +1859,7 @@ endif()
 		FILE_CONTENT
 		"${FILE_CONTENT}"
 	)
-	file(WRITE "${${ProjectName}_INSTALL_DIR}/cmake/RapidJSONConfig.cmake"
+	file(WRITE ${CONFIG_FILE_PATH}
 		"${FILE_CONTENT}"
 	)
 
@@ -2712,6 +2726,53 @@ function(Importjwtcpp)
 
 	set(EXTERNALPROJECT_OPTION_EX
 		-DJWT_BUILD_EXAMPLES:BOOL=OFF
+	)
+
+	# header only
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} --build . --config Release
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	)
+
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+endfunction()
+
+function(Importisptr)
+	set(WORKING_DIRECTORY
+		${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT}
+	)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(FindInPath_FOUND)
+		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:gershnik/intrusive_shared_ptr.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/gershnik/intrusive_shared_ptr.git")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DBUILD_TESTING:BOOL=OFF
 	)
 
 	# header only
