@@ -1,12 +1,88 @@
 cmake_minimum_required(VERSION 3.24)
 include(RegexHelper)
 
-function(FindInPath ProjectName Path)
+macro(_build_external_project SINGLE_BUILD)
+	if(CMAKE_GENERATOR_PLATFORM)
+		list(APPEND _cmake_args -A "${CMAKE_GENERATOR_PLATFORM}")
+	endif()
+	if(CMAKE_BUILD_TYPE)
+		list(APPEND _cmake_args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+	endif()
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" ${_cmake_args}
+			-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+			-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+			-DIMPORT_PROJECT_EXTERNAL_DIR=${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}
+			${WORKING_DIRECTORY}
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+		RESULT_VARIABLE _config_result
+	)
+
+	if(CMAKE_BUILD_TYPE)
+		execute_process(
+			COMMAND ${CMAKE_COMMAND} --build .
+			WORKING_DIRECTORY ${WORKING_DIRECTORY}
+		)
+	else()
+		if(NOT ${SINGLE_BUILD})
+			execute_process(
+				COMMAND ${CMAKE_COMMAND} --build . --config Debug
+				WORKING_DIRECTORY ${WORKING_DIRECTORY}
+			)
+		endif()
+		execute_process(
+			COMMAND ${CMAKE_COMMAND} --build . --config Release
+			WORKING_DIRECTORY ${WORKING_DIRECTORY}
+		)
+	endif()
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+endmacro()
+
+macro(_build_custom_project SINGLE_BUILD)
+	if(CMAKE_GENERATOR_PLATFORM)
+		list(APPEND _cmake_args -A "${CMAKE_GENERATOR_PLATFORM}")
+	endif()
+	if(CMAKE_BUILD_TYPE)
+		list(APPEND _cmake_args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+	endif()
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" ${_cmake_args}
+			-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+			-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+			-DIMPORT_PROJECT_EXTERNAL_DIR=${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}
+			${WORKING_DIRECTORY}
+		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+		RESULT_VARIABLE _config_result
+	)
+
+	if(CMAKE_BUILD_TYPE)
+		execute_process(
+			COMMAND ${CMAKE_COMMAND} --build . --target INSTALL
+			WORKING_DIRECTORY ${WORKING_DIRECTORY}
+		)
+	else()
+		if(NOT ${SINGLE_BUILD})
+			execute_process(
+				COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
+				WORKING_DIRECTORY ${WORKING_DIRECTORY}
+			)
+		endif()
+		execute_process(
+			COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+			WORKING_DIRECTORY ${WORKING_DIRECTORY}
+		)
+	endif()
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+endmacro()
+
+function(_find_in_path ProjectName Path)
 	set(options CONFIG REQUIRED)
 	set(oneValueArgs)
 	set(multiValueArgs)
 
-	cmake_parse_arguments(FindInPath
+	cmake_parse_arguments(_find_in_path
 		"${options}"
 		"${oneValueArgs}"
 		"${multiValueArgs}"
@@ -15,13 +91,13 @@ function(FindInPath ProjectName Path)
 
 	list(APPEND CMAKE_PREFIX_PATH ${Path})
 
-	if(FindInPath_CONFIG)
+	if(_find_in_path_CONFIG)
 		set(config_parameter CONFIG)
 	else()
 		set(config_parameter)
 	endif()
 
-	if(FindInPath_REQUIRED)
+	if(_find_in_path_REQUIRED)
 		set(required_parameter REQUIRED)
 	else()
 		set(required_parameter)
@@ -30,13 +106,13 @@ function(FindInPath ProjectName Path)
 	find_package(${ProjectName} ${config_parameter} ${required_parameter})
 
 	if(${ProjectName}_FOUND)
-		set(FindInPath_FOUND TRUE PARENT_SCOPE)
+		set(_find_in_path_FOUND TRUE PARENT_SCOPE)
 	else()
-		set(FindInPath_FOUND FALSE PARENT_SCOPE)
+		set(_find_in_path_FOUND FALSE PARENT_SCOPE)
 	endif()
 endfunction()
 
-function(AddPathToPrefix Path)
+function(_add_path_to_prefix Path)
 	list(APPEND CMAKE_PREFIX_PATH ${Path})
 	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} CACHE INTERNAL "")
 endfunction()
@@ -274,6 +350,8 @@ function(ImportProject ProjectName)
 			Importsemver()
 		elseif(ProjectName STREQUAL "sentry")
 			Importsentry()
+		elseif(ProjectName STREQUAL "simdutf")
+			Importsimdutf()
 		else()
 			message(FATAL_ERROR "no project ${ProjectName} to import")
 		endif()
@@ -300,10 +378,10 @@ function(ImportSPDLOG)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -322,21 +400,7 @@ function(ImportSPDLOG)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportCONCURRENTQUEUE)
@@ -346,10 +410,10 @@ function(ImportCONCURRENTQUEUE)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -364,21 +428,11 @@ function(ImportCONCURRENTQUEUE)
 	endif()
 
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(ImportPalSigslot)
@@ -388,10 +442,10 @@ function(ImportPalSigslot)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -410,27 +464,17 @@ function(ImportPalSigslot)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(Importmimalloc)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -463,31 +507,17 @@ function(Importmimalloc)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportZLIB)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -509,21 +539,7 @@ function(ImportZLIB)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportCURL)
@@ -536,10 +552,10 @@ function(ImportCURL)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -564,31 +580,17 @@ function(ImportCURL)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportSQLITE3)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG)
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG)
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -609,21 +611,8 @@ function(ImportSQLITE3)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
 
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_custom_project(FALSE)
 endfunction()
 
 function(ImportLIBUV)
@@ -632,10 +621,10 @@ function(ImportLIBUV)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -657,21 +646,7 @@ function(ImportLIBUV)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportDETOURS)
@@ -681,10 +656,10 @@ function(ImportDETOURS)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix/src/${ProjectName_Lower}
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -706,27 +681,17 @@ function(ImportDETOURS)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(ImportSDL2)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -745,31 +710,17 @@ function(ImportSDL2)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportSDL3)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -794,21 +745,7 @@ function(ImportSDL3)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportSDL2_image)
@@ -816,10 +753,10 @@ function(ImportSDL2_image)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -838,21 +775,7 @@ function(ImportSDL2_image)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportSDL3_image)
@@ -860,10 +783,10 @@ function(ImportSDL3_image)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -882,31 +805,17 @@ function(ImportSDL3_image)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportMbedTLS)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -940,21 +849,7 @@ function(ImportMbedTLS)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportGLEW)
@@ -964,10 +859,10 @@ function(ImportGLEW)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -988,19 +883,29 @@ function(ImportGLEW)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+
+	if(CMAKE_GENERATOR_PLATFORM)
+		list(APPEND _cmake_args -A "${CMAKE_GENERATOR_PLATFORM}")
+	endif()
+
+	if(CMAKE_BUILD_TYPE)
+		list(APPEND _cmake_args -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
+	endif()
+
 	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
+		COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" ${_cmake_args}
+			-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+			-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} ${WORKING_DIRECTORY}
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 
-	# compile debug release in same time
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} --build . --config Release
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 endfunction()
 
 function(ImportRAPIDFUZZ)
@@ -1010,10 +915,10 @@ function(ImportRAPIDFUZZ)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1034,29 +939,17 @@ function(ImportRAPIDFUZZ)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	# header only library
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(ImportxxHash)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1083,31 +976,17 @@ function(ImportxxHash)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportZSTD)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1134,29 +1013,15 @@ function(ImportZSTD)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportBOOST)
 	set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/out)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1188,24 +1053,20 @@ function(ImportBOOST)
 		@ONLY
 	)
 	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
+		COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 endfunction()
 
 function(ImportOPENSSL)
 	set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/_deps/openssl-src/install)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1254,18 +1115,18 @@ function(ImportOPENSSL)
 		WORKING_DIRECTORY ${WORKING_DIRECTORY}
 	)
 
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 endfunction()
 
 function(ImportQINIU)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1290,31 +1151,17 @@ function(ImportQINIU)
 		@ONLY
 	)
 
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_custom_project(FALSE)
 endfunction()
 
 function(ImportFOLLY)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1342,21 +1189,7 @@ function(ImportFOLLY)
 		@ONLY
 	)
 
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportTBB)
@@ -1366,10 +1199,10 @@ function(ImportTBB)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1396,28 +1229,17 @@ function(ImportTBB)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportMINIZIP)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1471,21 +1293,7 @@ function(ImportMINIZIP)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportSTEAM)
@@ -1493,10 +1301,10 @@ function(ImportSTEAM)
 		${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}/${ProjectName_Lower}
 	)
 	set(${ProjectName}_INSTALL_DIR ${WORKING_DIRECTORY}/_deps/steam-src)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1515,27 +1323,17 @@ function(ImportSTEAM)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(ImportCPUID)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1554,31 +1352,17 @@ function(ImportCPUID)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportProtobuf)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG)
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG)
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1613,32 +1397,17 @@ function(ImportProtobuf)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} CONFIG REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportLIBWEBSOCKETS)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1673,30 +1442,15 @@ function(ImportLIBWEBSOCKETS)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportABSL)
 	set(PROJECT_INSTALL_DIR ${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix)
-	FindInPath(${ProjectName} ${PROJECT_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${PROJECT_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${PROJECT_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${PROJECT_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1715,21 +1469,7 @@ function(ImportABSL)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${PROJECT_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportSIMDJSON)
@@ -1737,10 +1477,10 @@ function(ImportSIMDJSON)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1760,21 +1500,7 @@ function(ImportSIMDJSON)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportRAPIDJSON)
@@ -1784,10 +1510,10 @@ function(ImportRAPIDJSON)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1863,8 +1589,8 @@ endif()
 		"${FILE_CONTENT}"
 	)
 
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
+	_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 endfunction()
 
 function(ImportSQLPP23)
@@ -1874,10 +1600,10 @@ function(ImportSQLPP23)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1896,27 +1622,17 @@ function(ImportSQLPP23)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(ImportSOCI)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1935,31 +1651,17 @@ function(ImportSOCI)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportDirectXTex)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -1978,31 +1680,17 @@ function(ImportDirectXTex)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportCapnProto)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2021,31 +1709,17 @@ function(ImportCapnProto)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportRE2)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2064,31 +1738,17 @@ function(ImportRE2)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportSTEAMDATAPP)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2107,21 +1767,7 @@ function(ImportSTEAMDATAPP)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(ImportValveFileVDF)
@@ -2131,10 +1777,10 @@ function(ImportValveFileVDF)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2156,17 +1802,7 @@ function(ImportValveFileVDF)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(ImportLazyImporter)
@@ -2176,10 +1812,10 @@ function(ImportLazyImporter)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2199,17 +1835,7 @@ function(ImportLazyImporter)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_custom_project(TRUE)
 endfunction()
 
 function(Importcxxopts)
@@ -2219,10 +1845,10 @@ function(Importcxxopts)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2247,17 +1873,7 @@ function(Importcxxopts)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(Importtomlplusplus)
@@ -2267,10 +1883,10 @@ function(Importtomlplusplus)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2290,17 +1906,7 @@ function(Importtomlplusplus)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(Importmagic_enum)
@@ -2310,10 +1916,10 @@ function(Importmagic_enum)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2338,17 +1944,7 @@ function(Importmagic_enum)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(ImportGlob)
@@ -2358,10 +1954,10 @@ function(ImportGlob)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2381,17 +1977,7 @@ function(ImportGlob)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_custom_project(TRUE)
 endfunction()
 
 function(ImportTaskflow)
@@ -2401,10 +1987,10 @@ function(ImportTaskflow)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2431,17 +2017,7 @@ function(ImportTaskflow)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(Importctre)
@@ -2451,10 +2027,10 @@ function(Importctre)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2482,27 +2058,17 @@ function(Importctre)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(Importinih)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2522,31 +2088,17 @@ function(Importinih)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_custom_project(FALSE)
 endfunction()
 
 function(ImportLibArchive)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2640,31 +2192,17 @@ function(ImportLibArchive)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(FALSE)
 endfunction()
 
 function(Importwildmatch)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2683,21 +2221,7 @@ function(Importwildmatch)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --target INSTALL --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_custom_project(FALSE)
 endfunction()
 
 function(Importjwtcpp)
@@ -2707,10 +2231,10 @@ function(Importjwtcpp)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2729,22 +2253,7 @@ function(Importjwtcpp)
 	)
 
 	# header only
-	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
-		${WORKING_DIRECTORY}/CMakeLists.txt
-		@ONLY
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(Importisptr)
@@ -2754,10 +2263,10 @@ function(Importisptr)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2776,22 +2285,7 @@ function(Importisptr)
 	)
 
 	# header only
-	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
-		${WORKING_DIRECTORY}/CMakeLists.txt
-		@ONLY
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(Importsemver)
@@ -2801,10 +2295,10 @@ function(Importsemver)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2824,32 +2318,17 @@ function(Importsemver)
 	)
 
 	# header only
-	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
-		${WORKING_DIRECTORY}/CMakeLists.txt
-		@ONLY
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	_build_external_project(TRUE)
 endfunction()
 
 function(Importsentry)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
 
-	if(FindInPath_FOUND)
-		AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
 		return()
 	endif()
 
@@ -2882,19 +2361,40 @@ function(Importsentry)
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} ${CMAKE_GENERATOR_ARGV} .
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	_build_external_project(FALSE)
+endfunction()
+
+function(Importsimdutf)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Debug
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
-	)
-	execute_process(
-		COMMAND ${CMAKE_COMMAND} --build . --config Release
-		WORKING_DIRECTORY ${WORKING_DIRECTORY}
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:simdutf/simdutf.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/simdutf/simdutf.git")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DCMAKE_DEBUG_POSTFIX:STRING=d
+		-DSIMDUTF_TESTS:BOOL=OFF
+		-DSIMDUTF_TOOLS:BOOL=OFF
 	)
 
-	FindInPath(${ProjectName} ${${ProjectName}_INSTALL_DIR} REQUIRED)
-	AddPathToPrefix(${${ProjectName}_INSTALL_DIR})
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	_build_external_project(FALSE)
 endfunction()
