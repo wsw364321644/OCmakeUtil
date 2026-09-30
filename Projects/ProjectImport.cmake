@@ -735,13 +735,19 @@ function(ImportSDL3)
 	endif()
 
 	if(IMPORT_PROJECT_STATIC)
-		set(SDL_SHARED FALSE)
+		set(SDL_SHARED OFF)
 	else()
-		set(SDL_SHARED TRUE)
+		set(SDL_SHARED ON)
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DCMAKE_DEBUG_POSTFIX:STRING=d
+		-DSDL_STATIC:BOOL=ON
+		-DSDL_SHARED:BOOL=${SDL_SHARED}
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -779,7 +785,6 @@ function(ImportSDL2_image)
 endfunction()
 
 function(ImportSDL3_image)
-	set(SDL3IMAGE_VENDORED TRUE)
 	set(${ProjectName}_INSTALL_DIR
 		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
 	)
@@ -800,8 +805,31 @@ function(ImportSDL3_image)
 		set(GIT_REPOSITORY "https://github.com/libsdl-org/SDL_image.git")
 	endif()
 
+	if(IMPORT_PROJECT_STATIC)
+		set(BUILD_SHARED_LIBS FALSE)
+	else()
+		set(BUILD_SHARED_LIBS TRUE)
+	endif()
+
+	cmake_path(GET CMAKE_ASM_NASM_COMPILER PARENT_PATH NASM_PATH)
+	if(NOT "$ENV{NASM_PATH}" STREQUAL "")
+		# 已有环境变量，保持不变
+	elseif(DEFINED NASM_PATH)
+		set(ENV{NASM_PATH} "${NASM_PATH}")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DCMAKE_DEBUG_POSTFIX:STRING=d
+		-DCMAKE_ASM_NASM_COMPILER:STRING=${CMAKE_ASM_NASM_COMPILER}
+		-DSDLIMAGE_SAMPLES:BOOL=OFF
+		-DSDL2IMAGE_AVIF:BOOL=OFF
+		-DSDL2IMAGE_JXL:BOOL=OFF
+		-DSDLIMAGE_BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+		-DSDLIMAGE_ZLIB_SHARED:BOOL=${BUILD_SHARED_LIBS}
+		-DSDLIMAGE_DEPS_SHARED:BOOL=${BUILD_SHARED_LIBS}
+	)
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
