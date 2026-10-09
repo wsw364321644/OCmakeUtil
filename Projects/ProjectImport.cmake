@@ -357,6 +357,8 @@ function(ImportProject ProjectName)
 			Importsentry()
 		elseif(ProjectName STREQUAL "simdutf")
 			Importsimdutf()
+		elseif(ProjectName STREQUAL "zpp")
+			Importzpp()
 		else()
 			message(FATAL_ERROR "no project ${ProjectName} to import")
 		endif()
@@ -400,8 +402,25 @@ function(ImportSPDLOG)
 		set(GIT_REPOSITORY "https://github.com/gabime/spdlog.git")
 	endif()
 
+	if(IMPORT_PROJECT_STATIC)
+		set(SPDLOG_BUILD_SHARED OFF)
+	else()
+		set(SPDLOG_BUILD_SHARED ON)
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DSPDLOG_BUILD_SHARED:BOOL=${SPDLOG_BUILD_SHARED}
+		-DSPDLOG_BUILD_EXAMPLE:BOOL=OFF
+		-DSPDLOG_FMT_EXTERNAL_HO:BOOL=OFF
+		-DSPDLOG_USE_STD_FORMAT:BOOL=ON
+		-DSPDLOG_WCHAR_SUPPORT:BOOL=ON
+		-DSPDLOG_WCHAR_FILENAMES:BOOL=OFF
+		-DSPDLOG_WCHAR_CONSOLE:BOOL=ON
+		-DSPDLOG_BUILD_PIC:BOOL=ON
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -464,8 +483,14 @@ function(ImportPalSigslot)
 		set(GIT_REPOSITORY "https://github.com/palacaze/sigslot.git")
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DSIGSLOT_COMPILE_EXAMPLES:BOOL=OFF
+		-DSIGSLOT_COMPILE_TESTS:BOOL=OFF
+		-DSIGSLOT_ENABLE_INSTALL:BOOL=ON
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -539,8 +564,12 @@ function(ImportZLIB)
 		set(GIT_REPOSITORY "https://github.com/madler/zlib.git")
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DZLIB_ENABLE_TESTS:BOOL=OFF
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -647,7 +676,7 @@ function(ImportLIBUV)
 	endif()
 
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -877,8 +906,15 @@ function(ImportMbedTLS)
 		set(MSVC_STATIC_RUNTIME OFF)
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DUSE_STATIC_MBEDTLS_LIBRARY:BOOL=${USE_STATIC_MBEDTLS_LIBRARY}
+		-DMSVC_STATIC_RUNTIME:BOOL=${MSVC_STATIC_RUNTIME}
+		-DENABLE_PROGRAMS:BOOL=OFF
+		-DENABLE_TESTING:BOOL=OFF
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -968,7 +1004,7 @@ function(ImportRAPIDFUZZ)
 	endif()
 
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1217,11 +1253,10 @@ function(ImportFOLLY)
 	endif()
 
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
-
 	_build_external_project(FALSE)
 endfunction()
 
@@ -1251,14 +1286,13 @@ function(ImportTBB)
 		set(GIT_REPOSITORY "https://github.com/uxlfoundation/oneTBB.git")
 	endif()
 
-	if(IMPORT_PROJECT_STATIC)
-		set(BUILD_SHARED_LIBS OFF)
-	else()
-		set(BUILD_SHARED_LIBS ON)
-	endif()
+	set(EXTERNALPROJECT_OPTION_EX
+		-DTBB_TEST:BOOL=OFF
+		-DTBB_EXAMPLES:BOOL=OFF
+	)
 
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1321,8 +1355,18 @@ function(ImportMINIZIP)
 		set(MZ_LZMA OFF)
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DZLIB_USE_STATIC_LIBS:BOOL=${IMPORT_PROJECT_STATIC}
+		-DMZ_BUILD_TESTS:BOOL=OFF
+		-DMZ_ZLIB:BOOL=${MZ_ZLIB}
+		-DMZ_BZIP2:BOOL=${MZ_BZIP2}
+		-DMZ_LZMA:BOOL=${MZ_LZMA}
+		-DMZ_ZSTD:BOOL=${MZ_ZSTD}
+		-DMZ_FETCH_LIBS:BOOL=OFF
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1380,8 +1424,13 @@ function(ImportCPUID)
 		set(GIT_REPOSITORY "https://github.com/anrieff/libcpuid.git")
 	endif()
 
+	# MSVC_CXX_ARCHITECTURE_ID should not be used.  wait libcpuid fix it.
+	set(EXTERNALPROJECT_OPTION_EX
+		-DMSVC_CXX_ARCHITECTURE_ID:STRING=${CMAKE_C_COMPILER_ARCHITECTURE_ID}
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1497,8 +1546,15 @@ function(ImportABSL)
 		set(GIT_REPOSITORY "https://github.com/abseil/abseil-cpp.git")
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DABSL_MSVC_STATIC_RUNTIME:BOOL=${IMPORT_PROJECT_STATIC_CRT}
+		-DABSL_BUILD_TESTING:BOOL=OFF
+		-DABSL_ENABLE_INSTALL:BOOL=ON
+		-DABSL_INTERNAL_AT_LEAST_CXX17:BOOL=ON
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1560,8 +1616,14 @@ function(ImportRAPIDJSON)
 		set(GIT_REPOSITORY "https://github.com/Tencent/rapidjson.git")
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DRAPIDJSON_BUILD_DOC:BOOL=OFF
+		-DRAPIDJSON_BUILD_EXAMPLES:BOOL=OFF
+		-DRAPIDJSON_BUILD_TESTS:BOOL=OFF
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1650,8 +1712,13 @@ function(ImportSQLPP23)
 		set(GIT_REPOSITORY "https://github.com/rbock/sqlpp23.git")
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DBUILD_SQLITE3_CONNECTOR:BOOL=OFF
+		-DBUILD_TESTING:BOOL=OFF
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1679,8 +1746,22 @@ function(ImportSOCI)
 		set(GIT_REPOSITORY "https://github.com/SOCI/soci.git")
 	endif()
 
+	if(IMPORT_PROJECT_STATIC)
+		set(BUILD_SHARED_LIBS OFF)
+	else()
+		set(BUILD_SHARED_LIBS ON)
+	endif()
+
+	find_package(Boost)
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DSOCI_SHARED:BOOL=${BUILD_SHARED_LIBS}
+		-DSOCI_TESTS:BOOL=OFF
+		-DWITH_BOOST:BOOL=${Boost_FOUND}
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1708,8 +1789,12 @@ function(ImportDirectXTex)
 		set(GIT_REPOSITORY "https://github.com/microsoft/DirectXTex.git")
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DBUILD_SAMPLE:BOOL=OFF
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1737,8 +1822,12 @@ function(ImportCapnProto)
 		set(GIT_REPOSITORY "https://github.com/capnproto/capnproto.git")
 	endif()
 
+	set(EXTERNALPROJECT_OPTION_EX
+		-DZLIB_USE_STATIC_LIBS:BOOL=${IMPORT_PROJECT_STATIC}
+	)
+
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1767,7 +1856,7 @@ function(ImportRE2)
 	endif()
 
 	configure_file(
-		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
@@ -1862,12 +1951,12 @@ function(ImportLazyImporter)
 		set(GIT_REPOSITORY "https://github.com/JustasMasiulis/lazy_importer.git")
 	endif()
 
-	# header only
 	configure_file(
 		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+	# header only
 	_build_custom_project(TRUE)
 endfunction()
 
@@ -1900,12 +1989,12 @@ function(Importcxxopts)
 		-DCXXOPTS_BUILD_EXAMPLES:BOOL=OFF
 	)
 
-	# header only
 	configure_file(
 		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+	# header only
 	_build_external_project(TRUE)
 endfunction()
 
@@ -1933,12 +2022,12 @@ function(Importtomlplusplus)
 		set(GIT_REPOSITORY "https://github.com/marzer/tomlplusplus.git")
 	endif()
 
-	# header only
 	configure_file(
 		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+	# header only
 	_build_external_project(TRUE)
 endfunction()
 
@@ -1971,12 +2060,12 @@ function(Importmagic_enum)
 		-DMAGIC_ENUM_OPT_BUILD_TESTS:bool=OFF
 	)
 
-	# header only
 	configure_file(
 		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+	# header only
 	_build_external_project(TRUE)
 endfunction()
 
@@ -2004,12 +2093,12 @@ function(ImportGlob)
 		set(GIT_REPOSITORY "https://github.com/p-ranav/glob.git")
 	endif()
 
-	# header only
 	configure_file(
 		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+	# header only
 	_build_custom_project(TRUE)
 endfunction()
 
@@ -2085,12 +2174,12 @@ function(Importctre)
 		-DCTRE_BUILD_TESTS:BOOL=OFF
 	)
 
-	# header only
 	configure_file(
 		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
 		${WORKING_DIRECTORY}/CMakeLists.txt
 		@ONLY
 	)
+	# header only
 	_build_external_project(TRUE)
 endfunction()
 
@@ -2285,6 +2374,11 @@ function(Importjwtcpp)
 		-DJWT_BUILD_EXAMPLES:BOOL=OFF
 	)
 
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
 	# header only
 	_build_external_project(TRUE)
 endfunction()
@@ -2317,6 +2411,11 @@ function(Importisptr)
 		-DBUILD_TESTING:BOOL=OFF
 	)
 
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
 	# header only
 	_build_external_project(TRUE)
 endfunction()
@@ -2350,6 +2449,11 @@ function(Importsemver)
 		-DSEMVER_OPT_BUILD_EXAMPLES:bool=OFF
 	)
 
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
 	# header only
 	_build_external_project(TRUE)
 endfunction()
@@ -2430,4 +2534,36 @@ function(Importsimdutf)
 		@ONLY
 	)
 	_build_external_project(FALSE)
+endfunction()
+
+function(Importzpp)
+	set(WORKING_DIRECTORY
+		${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT}
+	)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:eyalz800/zpp_bits.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/eyalz800/zpp_bits.git")
+	endif()
+
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	_build_custom_project(TRUE)
 endfunction()

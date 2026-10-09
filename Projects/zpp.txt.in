@@ -1,0 +1,67 @@
+cmake_minimum_required(VERSION 3.24)
+include(FetchContent)
+
+set(ProjectName @ProjectName@)
+set(OCMAKEUTIL_PATH @OCMAKEUTIL_PATH@)
+set(OCMAKEUTIL_PROJECTS_PATH @OCMAKEUTIL_PROJECTS_PATH@)
+set(CMAKE_PREFIX_PATH @CMAKE_PREFIX_PATH@)
+set(CMAKE_SYSTEM_PROGRAM_PATH @CMAKE_SYSTEM_PROGRAM_PATH@)
+set(CMAKE_MODULE_PATH @CMAKE_MODULE_PATH@)
+set(IMPORT_PROJECT_STATIC @IMPORT_PROJECT_STATIC@)
+set(IMPORT_PROJECT_STATIC_CRT @IMPORT_PROJECT_STATIC_CRT@)
+add_subdirectory(${OCMAKEUTIL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/ocmakeutil)
+
+project(${ProjectName})
+include(GNUInstallDirs)
+set(CMAKE_DEBUG_POSTFIX d)
+
+if(IMPORT_PROJECT_STATIC)
+	set(BUILD_SHARED_LIBS OFF)
+else()
+	set(BUILD_SHARED_LIBS ON)
+endif()
+
+if(IMPORT_PROJECT_STATIC_CRT)
+	if(MSVC)
+		set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+		add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	endif()
+
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+else()
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+	set(
+		CMAKE_INSTALL_PREFIX
+		"${CMAKE_BINARY_DIR}/${ProjectName}-prefix"
+		CACHE
+			STRING
+			"Directory to install after building"
+		FORCE
+	)
+endif()
+
+FetchContent_Declare(
+	download_zpp_bits
+	GIT_REPOSITORY
+	@GIT_REPOSITORY@
+	GIT_TAG
+	@IMPORT_PROJECT_TAG@
+	SOURCE_SUBDIR
+	"avoid_add_subdirectory"
+)
+FetchContent_MakeAvailable(download_zpp_bits)
+FetchContent_GetProperties(download_zpp_bits)
+
+NewTargetSource()
+
+AddSourceFolder(INTERFACE "${download_zpp_bits_SOURCE_DIR}")
+
+add_library(zpp_bits INTERFACE)
+add_library(${ProjectName}::zpp_bits ALIAS zpp_bits)
+AddTargetInclude(zpp_bits)
+AddTargetInstall(zpp_bits ${ProjectName})
+ExportFromInstall(${ProjectName})
