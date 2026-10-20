@@ -59,7 +59,7 @@ function(EXCLUDE_FILES_FROM_DIR_IN_LIST _InFileList _excludeDirName)
 	set(_toRemove)
 	foreach(ITR ${${_InFileList}})
 		string(TOLOWER "${ITR}" _itrLower)
-		if("${_itrLower}" MATCHES "(^|/)${_excludeDirNameLower}/[^/]+$")	
+		if("${_itrLower}" MATCHES "(^|/)${_excludeDirNameLower}/[^/]+$")
 			list(APPEND _toRemove ${ITR})
 		endif()
 	endforeach()
@@ -180,13 +180,10 @@ macro(SearchSourceFiles FolderPath)
 			"assembler-with-cpp"
 	)
 	list(APPEND TmpSource ${TmpAsmSource})
-
-	# message(STATUS "EXCLUDED_FILES ${EXCLUDED_FILES}")
-	# if(NOT EXCLUDED_FILES STREQUAL "")
-	# set(SourceFiles "${SourceFiles};${EXCLUDED_FILES}")
-	# endif()
 endmacro()
 
+# SourceFiles only hints
+# INCLUDE option mean only include header file to project
 macro(AddSourceFolder)
 	set(options INCLUDE RECURSE C CXX)
 	set(oneValueArgs BASE)
@@ -199,37 +196,38 @@ macro(AddSourceFolder)
 	)
 
 	foreach(SourceFolder ${AddSourceFolder_PRIVATE})
-		# list(LENGTH PrivateIncludeFolders FoldersLength)
 		if(DEFINED AddSourceFolder_BASE)
 			list(APPEND PrivateIncludeFolders ${AddSourceFolder_BASE})
 		else()
 			list(APPEND PrivateIncludeFolders ${SourceFolder})
 		endif()
 		SearchSourceFiles(${SourceFolder})
-		list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
-		list(APPEND PrivateFiles ${TmpHeader})
-
-		# set("PrivateFiles${FoldersLength}" "")
-		# list(APPEND "PrivateFiles${FoldersLength}" ${TmpHeader} ${TmpSource})
+		if(AddSourceFolder_INCLUDE)
+			list(APPEND SourceFiles ${TmpHeader})
+			list(APPEND PrivateFiles ${TmpHeader})
+		else()
+			list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+			list(APPEND PrivateFiles ${TmpHeader} ${TmpSource})
+		endif()
 	endforeach()
 
 	foreach(SourceFolder ${AddSourceFolder_UNPARSED_ARGUMENTS})
-		# list(LENGTH PrivateIncludeFolders FoldersLength)
 		if(DEFINED AddSourceFolder_BASE)
 			list(APPEND PrivateIncludeFolders ${AddSourceFolder_BASE})
 		else()
 			list(APPEND PrivateIncludeFolders ${SourceFolder})
 		endif()
 		SearchSourceFiles(${SourceFolder})
-		list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
-		list(APPEND PrivateFiles ${TmpHeader} ${TmpSource})
-
-		# set("PrivateFiles${FoldersLength}" "")
-		# list(APPEND "PrivateFiles${FoldersLength}" ${TmpHeader} ${TmpSource})
+		if(AddSourceFolder_INCLUDE)
+			list(APPEND SourceFiles ${TmpHeader})
+			list(APPEND PrivateFiles ${TmpHeader})
+		else()
+			list(APPEND SourceFiles ${TmpHeader} ${TmpSource})
+			list(APPEND PrivateFiles ${TmpHeader} ${TmpSource})
+		endif()
 	endforeach()
 
 	foreach(SourceFolder ${AddSourceFolder_PUBLIC})
-		# list(LENGTH PublicIncludeFolders FoldersLength)
 		if(DEFINED AddSourceFolder_BASE)
 			list(APPEND PublicIncludeFolders ${AddSourceFolder_BASE})
 		else()
@@ -253,7 +251,6 @@ macro(AddSourceFolder)
 				OUTPUT_VARIABLE
 				IncludeFileRelativePath
 			)
-			# cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
 			cmake_path(APPEND
 				${CMAKE_INSTALL_INCLUDEDIR}
 				${IncludeFileRelativePath}
@@ -265,13 +262,9 @@ macro(AddSourceFolder)
 				"$<INSTALL_INTERFACE:${IncludeFileInstallPath}>"
 			)
 		endforeach()
-
-		# set("PublicIncludeFiles${FoldersLength}" "")
-		# list(APPEND "PublicIncludeFiles${FoldersLength}" ${TmpHeader})
 	endforeach()
 
 	foreach(SourceFolder ${AddSourceFolder_INTERFACE})
-		# list(LENGTH InterfaceIncludeFolders FoldersLength)
 		if(DEFINED AddSourceFolder_BASE)
 			list(APPEND InterfaceIncludeFolders ${AddSourceFolder_BASE})
 		else()
@@ -295,7 +288,6 @@ macro(AddSourceFolder)
 				OUTPUT_VARIABLE
 				IncludeFileRelativePath
 			)
-			# cmake_path(APPEND "@TARGET_NAME_TOKEN@" ${CMAKE_INSTALL_INCLUDEDIR} ${IncludeFileRelativePath} OUTPUT_VARIABLE IncludeFileInstallPath)
 			cmake_path(APPEND
 				${CMAKE_INSTALL_INCLUDEDIR}
 				${IncludeFileRelativePath}
@@ -307,9 +299,6 @@ macro(AddSourceFolder)
 				"$<INSTALL_INTERFACE:${IncludeFileInstallPath}>"
 			)
 		endforeach()
-
-		# set("InterfaceIncludeFiles${FoldersLength}" "")
-		# list(APPEND "InterfaceIncludeFiles${FoldersLength}" ${TmpHeader})
 	endforeach()
 
 	foreach(SourceFolder ${AddSourceFolder_CONFIG})
@@ -367,7 +356,6 @@ macro(AddTargetInclude TARGET_NAME)
 	list(LENGTH PublicIncludeFiles FilesLength)
 
 	if(${FilesLength} GREATER 0)
-		# string(REPLACE "@TARGET_NAME_TOKEN@" ${TARGET_NAME} FinalFiles "${PublicIncludeFiles}")
 		target_sources(${TARGET_NAME}
 			PUBLIC
 			FILE_SET HEADERS
@@ -381,7 +369,6 @@ macro(AddTargetInclude TARGET_NAME)
 	list(LENGTH InterfaceIncludeFiles FilesLength)
 
 	if(${FilesLength} GREATER 0)
-		# string(REPLACE "@TARGET_NAME_TOKEN@" ${TARGET_NAME} FinalFiles "${InterfaceIncludeFiles}")
 		target_sources(${TARGET_NAME}
 			PUBLIC
 			FILE_SET HEADERS
@@ -403,19 +390,9 @@ macro(AddTargetInclude TARGET_NAME)
 			${ConfigFiles}
 		)
 	endif()
-
-	# message(STATUS "Include ${TARGET_NAME} ${PublicIncludeFolders} ${PublicIncludeFiles}")
 endmacro()
 
 macro(AddTargetInstall TARGET_NAME EXPORT_NAME)
-	# get_target_property(target_type ${TARGET_NAME} TYPE)
-
-	# set(TARGET_NAMESPACE ${EXPORT_NAME})
-
-	# if(NOT target_type STREQUAL "EXECUTABLE")
-	#     add_library(${TARGET_NAMESPACE}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-	# endif()
-
 	install(
 		TARGETS ${TARGET_NAME}
 		EXPORT ${EXPORT_NAME}Targets
@@ -424,7 +401,6 @@ macro(AddTargetInstall TARGET_NAME EXPORT_NAME)
 		RUNTIME
 			DESTINATION
 			${CMAKE_INSTALL_BINDIR}
-			# PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 		FILE_SET HEADERS
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 		FILE_SET config_files

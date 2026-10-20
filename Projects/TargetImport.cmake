@@ -21,10 +21,7 @@ FUNCTION(ImportTarget TargetName)
         endif()
     endif()
 
-
-    if(TargetName STREQUAL "imgui")
-        Importimgui()
-    elseif(TargetName STREQUAL "mpack")
+    if(TargetName STREQUAL "mpack")
         Importmpack()
     elseif(TargetName STREQUAL "rollinghashcpp")
         Importrollinghashcpp()
@@ -165,131 +162,6 @@ ENDFUNCTION(ImportTarget)
 #     add_library(${PACKAGE_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
 #     add_inihpp(${TARGET_NAME})
 # ENDFUNCTION(Importinih)
-
-FUNCTION(Importimgui)
-    set(TARGET_NAME imgui_a)
-    set(TARGET_NAMESPACE imgui)
-
-    if(TARGET ${TARGET_NAME})
-        return()
-    endif()
-
-    if(NOT IMPORT_PROJECT_TAG)
-        set(IMPORT_PROJECT_TAG "6ccc561a2ab497ad4ae6ee1dbd3b992ffada35cb") # v1.90.6
-        message(SEND_ERROR "missing PROJECT_TAG")
-    endif()
-
-    if(IMPORT_PROJECT_SSH)
-        set(GIT_REPOSITORY "git@github.com:ocornut/imgui.git")
-    else()
-        set(GIT_REPOSITORY "https://github.com/ocornut/imgui.git")
-    endif()
-
-    FetchContent_Declare(
-        imgui
-        GIT_REPOSITORY ${GIT_REPOSITORY}
-        GIT_TAG ${IMPORT_PROJECT_TAG}
-        GIT_SHALLOW ${GIT_SHALLOW_VAL}
-    )
-    FetchContent_MakeAvailable(imgui)
-    FetchContent_GetProperties(imgui)
-
-    set(SourceFiles "")
-    set(HeaderFiles "")
-
-    list(APPEND SourceFiles
-        ${imgui_SOURCE_DIR}/imgui.h
-        ${imgui_SOURCE_DIR}/imgui.cpp
-        ${imgui_SOURCE_DIR}/imconfig.h
-        ${imgui_SOURCE_DIR}/imgui_draw.cpp
-        ${imgui_SOURCE_DIR}/imgui_internal.h
-        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-        ${imgui_SOURCE_DIR}/imgui_tables.cpp
-        ${imgui_SOURCE_DIR}/imgui_demo.cpp
-    )
-
-    find_package(OpenGL)
-    find_package(GLUT)
-    find_package(GLFW)
-
-    if(OPENGL_FOUND)
-        list(APPEND SourceFiles
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.h
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.h
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-        )
-
-        if(GLUT_FOUND)
-            list(APPEND SourceFiles
-                ${imgui_SOURCE_DIR}/backends/imgui_impl_glut.h
-                ${imgui_SOURCE_DIR}/backends/imgui_impl_glut.cpp
-            )
-        endif()
-
-        if(GLFW_FOUND)
-            list(APPEND SourceFiles
-                ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.h
-                ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-            )
-        endif()
-    endif()
-
-    find_package(SDL2)
-
-    if(SDL2_FOUND)
-        list(APPEND SourceFiles
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.h
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
-        )
-    endif()
-
-    if(WIN32)
-        list(APPEND SourceFiles
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.h
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx9.h
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx9.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx10.h
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx10.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.h
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.h
-            ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
-        )
-    endif()
-
-    add_library(${TARGET_NAME} STATIC ${SourceFiles})
-    add_library(${TARGET_NAMESPACE}::${TARGET_NAME} ALIAS ${TARGET_NAME})
-    target_compile_definitions(${TARGET_NAME} PUBLIC -DImTextureID=ImU64)
-    target_compile_definitions(${TARGET_NAME} PUBLIC -DIMGUI_USE_WCHAR32)
-
-    TARGET_INCLUDE_DIRECTORIES(${TARGET_NAME} PUBLIC
-        $<BUILD_INTERFACE:${imgui_SOURCE_DIR}/backends>
-        $<BUILD_INTERFACE:${imgui_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${TARGET_NAME}>
-    )
-
-    if(SDL2_FOUND)
-        target_link_libraries(${TARGET_NAME} PRIVATE SDL2::SDL2-static)
-    endif()
-
-    if(OPENGL_FOUND)
-        target_link_libraries(${TARGET_NAME} PRIVATE OpenGL::GL)
-
-        if(GLUT_FOUND)
-            target_link_libraries(${TARGET_NAME} PRIVATE GLUT::GLUT)
-        endif()
-
-        if(GLFW_FOUND)
-            target_link_libraries(${TARGET_NAME} PRIVATE GLFW::GLFW)
-        endif()
-    endif()
-
-    AddTargetInclude(${TARGET_NAME})
-    AddTargetInstall(${TARGET_NAME} ${TARGET_NAMESPACE})
-    ExportFromInstall(${TARGET_NAMESPACE})
-ENDFUNCTION(Importimgui)
 
 FUNCTION(Importmpack)
     set(TARGET_NAME mpack)

@@ -359,6 +359,8 @@ function(ImportProject ProjectName)
 			Importsimdutf()
 		elseif(ProjectName STREQUAL "zpp")
 			Importzpp()
+		elseif(ProjectName STREQUAL "imgui")
+			Importimgui()
 		else()
 			message(FATAL_ERROR "no project ${ProjectName} to import")
 		endif()
@@ -2566,4 +2568,33 @@ function(Importzpp)
 		@ONLY
 	)
 	_build_custom_project(TRUE)
+endfunction()
+
+function(Importimgui)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:ocornut/imgui.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/ocornut/imgui.git")
+	endif()
+
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/${ProjectName_Lower}.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	_build_custom_project(FALSE)
 endfunction()
