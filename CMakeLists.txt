@@ -1,6 +1,47 @@
-cmake_minimum_required(VERSION 4.4)
+cmake_minimum_required(VERSION 4.2)
 
-project(ocmake_util)
+project(ocmake_util NONE)
+include(GNUInstallDirs)
+
+if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+	set(
+		CMAKE_LINK_LIBRARY_USING_delayload
+		"/DELAYLOAD:\"<LIBRARY>\""
+		CACHE
+			STRING
+			"Link library using delayload"
+	)
+	set(
+		CMAKE_LINK_LIBRARY_USING_delayload_SUPPORTED
+		TRUE
+		CACHE
+			BOOL
+			"Link library using delayload supported"
+	)
+endif()
+
+set(
+	CONFIG_INSTALL_BINDIR
+	"$<CONFIG>/${CMAKE_INSTALL_BINDIR}"
+	CACHE
+		STRING
+		"Install directory for executables"
+)
+set(
+	CONFIG_INSTALL_LIBDIR
+	"$<CONFIG>/${CMAKE_INSTALL_LIBDIR}"
+	CACHE
+		STRING
+		"Install directory for libraries"
+)
+set(
+	CONFIG_INSTALL_INCLUDEDIR
+	"$<CONFIG>/${CMAKE_INSTALL_INCLUDEDIR}"
+	CACHE
+		STRING
+		"Install directory for headers"
+)
+
 list(APPEND CMAKE_MODULE_PATH
 	"${CMAKE_CURRENT_SOURCE_DIR}"
 	"${CMAKE_CURRENT_SOURCE_DIR}/Modules"

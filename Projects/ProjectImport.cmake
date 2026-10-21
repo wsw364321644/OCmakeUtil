@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 3.24)
 include(RegexHelper)
 
 macro(_build_external_project SINGLE_BUILD)

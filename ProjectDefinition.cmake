@@ -1,45 +1,3 @@
-cmake_minimum_required(VERSION 3.20)
-include(GNUInstallDirs)
-
-if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-	set(
-		CMAKE_LINK_LIBRARY_USING_delayload
-		"/DELAYLOAD:\"<LIBRARY>\""
-		CACHE
-			STRING
-			"Link library using delayload"
-	)
-	set(
-		CMAKE_LINK_LIBRARY_USING_delayload_SUPPORTED
-		TRUE
-		CACHE
-			BOOL
-			"Link library using delayload supported"
-	)
-endif()
-
-set(
-	CONFIG_INSTALL_BINDIR
-	"$<CONFIG>/${CMAKE_INSTALL_BINDIR}"
-	CACHE
-		STRING
-		"Install directory for executables"
-)
-set(
-	CONFIG_INSTALL_LIBDIR
-	"$<CONFIG>/${CMAKE_INSTALL_LIBDIR}"
-	CACHE
-		STRING
-		"Install directory for libraries"
-)
-set(
-	CONFIG_INSTALL_INCLUDEDIR
-	"$<CONFIG>/${CMAKE_INSTALL_INCLUDEDIR}"
-	CACHE
-		STRING
-		"Install directory for headers"
-)
-
 function(TargetAddDelayLoad _TargetName _DllName)
 	get_filename_component(FILE_SUFFIX "${_DllName}" EXT)
 
@@ -243,25 +201,26 @@ macro(AddSourceFolder)
 			list(APPEND PrivateFiles ${TmpSource})
 		endif()
 
-		foreach(FILE ${TmpHeader})
-			cmake_path(RELATIVE_PATH
-				FILE
-				BASE_DIRECTORY
-				${SourceFolder}
-				OUTPUT_VARIABLE
-				IncludeFileRelativePath
-			)
-			cmake_path(APPEND
-				${CMAKE_INSTALL_INCLUDEDIR}
-				${IncludeFileRelativePath}
-				OUTPUT_VARIABLE
-				IncludeFileInstallPath
-			)
-			list(APPEND PublicIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
-			list(APPEND PublicIncludeFiles
-				"$<INSTALL_INTERFACE:${IncludeFileInstallPath}>"
-			)
-		endforeach()
+		# foreach(FILE ${TmpHeader})
+		# 	cmake_path(RELATIVE_PATH
+		# 		FILE
+		# 		BASE_DIRECTORY
+		# 		${SourceFolder}
+		# 		OUTPUT_VARIABLE
+		# 		IncludeFileRelativePath
+		# 	)
+		# 	cmake_path(APPEND
+		# 		${CMAKE_INSTALL_INCLUDEDIR}
+		# 		${IncludeFileRelativePath}
+		# 		OUTPUT_VARIABLE
+		# 		IncludeFileInstallPath
+		# 	)
+		# 	list(APPEND PublicIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
+		# 	list(APPEND PublicIncludeFiles
+		# 		"$<INSTALL_INTERFACE:${IncludeFileInstallPath}>"
+		# 	)
+		# endforeach()
+		list(APPEND PublicIncludeFiles ${TmpHeader})
 	endforeach()
 
 	foreach(SourceFolder ${AddSourceFolder_INTERFACE})
@@ -280,25 +239,26 @@ macro(AddSourceFolder)
 			list(APPEND PrivateFiles ${TmpSource})
 		endif()
 
-		foreach(FILE ${TmpHeader})
-			cmake_path(RELATIVE_PATH
-				FILE
-				BASE_DIRECTORY
-				${SourceFolder}
-				OUTPUT_VARIABLE
-				IncludeFileRelativePath
-			)
-			cmake_path(APPEND
-				${CMAKE_INSTALL_INCLUDEDIR}
-				${IncludeFileRelativePath}
-				OUTPUT_VARIABLE
-				IncludeFileInstallPath
-			)
-			list(APPEND InterfaceIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
-			list(APPEND InterfaceIncludeFiles
-				"$<INSTALL_INTERFACE:${IncludeFileInstallPath}>"
-			)
-		endforeach()
+		# foreach(FILE ${TmpHeader})
+		# 	cmake_path(RELATIVE_PATH
+		# 		FILE
+		# 		BASE_DIRECTORY
+		# 		${SourceFolder}
+		# 		OUTPUT_VARIABLE
+		# 		IncludeFileRelativePath
+		# 	)
+		# 	cmake_path(APPEND
+		# 		${CMAKE_INSTALL_INCLUDEDIR}
+		# 		${IncludeFileRelativePath}
+		# 		OUTPUT_VARIABLE
+		# 		IncludeFileInstallPath
+		# 	)
+		# 	list(APPEND InterfaceIncludeFiles "$<BUILD_INTERFACE:${FILE}>")
+		# 	list(APPEND InterfaceIncludeFiles
+		# 		"$<INSTALL_INTERFACE:${IncludeFileInstallPath}>"
+		# 	)
+		# endforeach()
+		list(APPEND InterfaceIncludeFiles ${TmpHeader})
 	endforeach()
 
 	foreach(SourceFolder ${AddSourceFolder_CONFIG})
@@ -398,9 +358,7 @@ macro(AddTargetInstall TARGET_NAME EXPORT_NAME)
 		EXPORT ${EXPORT_NAME}Targets
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		RUNTIME
-			DESTINATION
-			${CMAKE_INSTALL_BINDIR}
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 		FILE_SET HEADERS
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 		FILE_SET config_files
