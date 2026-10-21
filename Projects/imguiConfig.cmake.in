@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+find_dependency(OpenGL)
+
+include(${CMAKE_CURRENT_LIST_DIR}/@EXPORT_NAME@Targets.cmake)
