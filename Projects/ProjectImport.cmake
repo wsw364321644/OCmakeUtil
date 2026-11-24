@@ -252,6 +252,8 @@ function(ImportProject ProjectName)
 
 		if(ProjectName STREQUAL "spdlog")
 			ImportSPDLOG()
+		elseif(ProjectName STREQUAL "stdexec")
+			Importstdexec()
 		elseif(ProjectName STREQUAL "concurrentqueue")
 			ImportCONCURRENTQUEUE()
 		elseif(ProjectName STREQUAL "PalSigslot")
@@ -426,6 +428,42 @@ function(ImportSPDLOG)
 		@ONLY
 	)
 	_build_external_project(FALSE)
+endfunction()
+
+function(Importstdexec)
+	set(WORKING_DIRECTORY
+		${IMPORT_PROJECT_EXTERNAL_DIR_CACHE}/${ProjectName_Lower}_${IMPORT_PROJECT_BIT}
+	)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing stdexec tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:NVIDIA/stdexec.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/NVIDIA/stdexec.git")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DSTDEXEC_BUILD_TESTS:BOOL=OFF
+	)
+
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	_build_external_project(TRUE)
 endfunction()
 
 function(ImportCONCURRENTQUEUE)
