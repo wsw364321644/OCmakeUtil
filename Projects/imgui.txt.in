@@ -72,13 +72,13 @@ target_compile_definitions(${TARGET_NAME} PUBLIC -DIMGUI_USE_WCHAR32)
 list(APPEND PrivateFiles
 	${imgui_SOURCE_DIR}/imgui.cpp
 	${imgui_SOURCE_DIR}/imgui_draw.cpp
-	${imgui_SOURCE_DIR}/imgui_internal.h
 	${imgui_SOURCE_DIR}/imgui_widgets.cpp
 	${imgui_SOURCE_DIR}/imgui_tables.cpp
 	${imgui_SOURCE_DIR}/imgui_demo.cpp
 )
 
 list(APPEND PublicIncludeFiles
+	${imgui_SOURCE_DIR}/imgui_internal.h
 	${imgui_SOURCE_DIR}/imgui.h
 	${imgui_SOURCE_DIR}/imconfig.h
 )
