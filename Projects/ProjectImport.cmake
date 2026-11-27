@@ -320,6 +320,10 @@ function(ImportProject ProjectName)
 			ImportSOCI()
 		elseif(ProjectName STREQUAL "DirectXTex")
 			ImportDirectXTex()
+		elseif(ProjectName STREQUAL "DirectXTK")
+			ImportDirectXTK()
+		elseif(ProjectName STREQUAL "glm")
+			Importglm()
 		elseif(ProjectName STREQUAL "CapnProto")
 			ImportCapnProto()
 		elseif(ProjectName STREQUAL "re2")
@@ -362,6 +366,8 @@ function(ImportProject ProjectName)
 			Importzpp()
 		elseif(ProjectName STREQUAL "imgui")
 			Importimgui()
+		elseif(ProjectName_Lower STREQUAL "assimp")
+			ImportASSIMP()
 		else()
 			message(FATAL_ERROR "no project ${ProjectName} to import")
 		endif()
@@ -420,6 +426,46 @@ function(ImportSPDLOG)
 		-DSPDLOG_WCHAR_FILENAMES:BOOL=OFF
 		-DSPDLOG_WCHAR_CONSOLE:BOOL=ON
 		-DSPDLOG_BUILD_PIC:BOOL=ON
+	)
+
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	_build_external_project(FALSE)
+endfunction()
+
+function(ImportASSIMP)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing assimp tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:assimp/assimp.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/assimp/assimp.git")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DASSIMP_BUILD_TESTS:BOOL=OFF
+		-DASSIMP_BUILD_ASSIMP_TOOLS:BOOL=OFF
+		-DASSIMP_BUILD_SAMPLES:BOOL=OFF
+		-DASSIMP_BUILD_DOCS:BOOL=OFF
+		-DASSIMP_WARNINGS_AS_ERRORS:BOOL=OFF
+		-DASSIMP_IGNORE_GIT_HASH:BOOL=ON
+		-DASSIMP_INSTALL:BOOL=ON
+		-DASSIMP_NO_EXPORT:BOOL=OFF
 	)
 
 	configure_file(
@@ -1830,7 +1876,76 @@ function(ImportDirectXTex)
 	endif()
 
 	set(EXTERNALPROJECT_OPTION_EX
+		-DBUILD_TOOLS:BOOL=OFF
 		-DBUILD_SAMPLE:BOOL=OFF
+	)
+
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	_build_external_project(FALSE)
+endfunction()
+
+function(ImportDirectXTK)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing DirectXTK tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:microsoft/DirectXTK.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/microsoft/DirectXTK.git")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DBUILD_TOOLS:BOOL=OFF
+	)
+
+	configure_file(
+		${CMAKE_CURRENT_FUNCTION_LIST_DIR}/simple_project.txt.in
+		${WORKING_DIRECTORY}/CMakeLists.txt
+		@ONLY
+	)
+	_build_external_project(FALSE)
+endfunction()
+
+function(Importglm)
+	set(${ProjectName}_INSTALL_DIR
+		${WORKING_DIRECTORY}/${ProjectName_Lower}-prefix
+	)
+	_find_in_path(${ProjectName} ${${ProjectName}_INSTALL_DIR})
+
+	if(_find_in_path_FOUND)
+		_add_path_to_prefix(${${ProjectName}_INSTALL_DIR})
+		return()
+	endif()
+
+	if(NOT IMPORT_PROJECT_TAG)
+		message(SEND_ERROR "missing glm tag")
+	endif()
+
+	if(IMPORT_PROJECT_SSH)
+		set(GIT_REPOSITORY "git@github.com:g-truc/glm.git")
+	else()
+		set(GIT_REPOSITORY "https://github.com/g-truc/glm.git")
+	endif()
+
+	set(EXTERNALPROJECT_OPTION_EX
+		-DGLM_BUILD_INSTALL:BOOL=ON
+		-DGLM_BUILD_LIBRARY:BOOL=ON
+		-DGLM_BUILD_TESTS:BOOL=OFF
 	)
 
 	configure_file(

@@ -158,6 +158,17 @@ if(SDL2_FOUND)
 	)
 endif()
 
+find_package(SDL3)
+
+if(SDL3_FOUND)
+	list(APPEND PrivateFiles
+		${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+	)
+	list(APPEND PublicIncludeFiles
+		${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.h
+	)
+endif()
+
 if(WIN32)
 	list(APPEND PrivateFiles
 		${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
@@ -189,6 +200,10 @@ target_sources(${TARGET_NAME}
 
 if(SDL2_FOUND)
 	target_link_libraries(${TARGET_NAME} PUBLIC SDL2::SDL2-static)
+endif()
+
+if(SDL3_FOUND)
+	target_link_libraries(${TARGET_NAME} PUBLIC SDL3::SDL3-static)
 endif()
 
 if(OPENGL_FOUND)
